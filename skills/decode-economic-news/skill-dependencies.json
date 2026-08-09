@@ -1,0 +1,24 @@
+{
+  "schema": "codex.skill-dependencies/1",
+  "skill": "decode-economic-news",
+  "python": {
+    "minimum_version": "3.10",
+    "core_packages": [],
+    "a_stock_data_packages": [
+      "mootdx>=0.10",
+      "requests",
+      "pandas",
+      "stockstats"
+    ]
+  },
+  "required_skills": [
+    {
+      "name": "a-stock-data",
+      "minimum_version": "3.3.0",
+      "purpose": "A-share quotes, fundamentals, fund flow, announcements, market mood and ETF options",
+      "repository": "https://github.com/simonlin1212/a-stock-data",
+      "raw_skill_url": "https://raw.githubusercontent.com/simonlin1212/a-stock-data/main/SKILL.md",
+      "fetch_policy": "explicit_opt_in_only"
+    }
+  ]
+}

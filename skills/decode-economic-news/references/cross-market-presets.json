@@ -1,0 +1,130 @@
+{
+  "schema": "cross-market.presets/1",
+  "as_of": "2026-08-08",
+  "symbol_format": "Yahoo Finance chart symbols; Korean listings use the .KS suffix",
+  "market_benchmarks": {
+    "us": {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust"},
+    "kr": {"symbol": "069500.KS", "name": "KODEX 200"}
+  },
+  "verification_sources": [
+    "https://www.ssga.com/us/en/individual/capabilities/equities/sector-investing/sector-and-industry-etfs",
+    "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf",
+    "https://www.ishares.com/us/products/239699/IBB",
+    "https://www.ishares.com/us/products/239502/ishares-us-aerospace-defense-etf",
+    "https://www.globalxetfs.com/funds/driv",
+    "https://www.globalxetfs.com/funds/pave",
+    "https://www.invesco.com/us/en/solutions/esg-sustainability.html",
+    "https://www.samsungfund.com/etf/product/list.do"
+  ],
+  "presets": {
+    "technology": {
+      "transmission_variables": ["AI资本开支", "云厂商回报率", "算力需求", "硬件库存", "美元利率"],
+      "us": [{"symbol": "XLK", "name": "Technology Select Sector SPDR Fund", "role": "sector_proxy", "mapping_strength": 0.8}],
+      "kr": [{"symbol": "266370.KS", "name": "KODEX IT", "role": "sector_proxy", "mapping_strength": 0.75}],
+      "event_leaders": {"us": ["MSFT", "AMZN", "GOOGL", "NVDA"], "kr": ["005930.KS", "000660.KS"]}
+    },
+    "semiconductor": {
+      "transmission_variables": ["AI资本开支", "HBM与存储价格", "晶圆与设备订单", "库存周期", "出口限制"],
+      "us": [{"symbol": "SOXX", "name": "iShares Semiconductor ETF", "role": "sector_proxy", "mapping_strength": 0.95}],
+      "kr": [{"symbol": "091160.KS", "name": "KODEX Semiconductor", "role": "sector_proxy", "mapping_strength": 0.95}],
+      "event_leaders": {"us": ["NVDA", "AVGO", "MU", "AMAT"], "kr": ["005930.KS", "000660.KS"]}
+    },
+    "innovative-drug": {
+      "transmission_variables": ["临床读出", "FDA审批", "授权交易", "融资窗口", "风险偏好"],
+      "us": [{"symbol": "IBB", "name": "iShares Biotechnology ETF", "role": "sector_proxy", "mapping_strength": 0.85}],
+      "kr": [{"symbol": "244580.KS", "name": "KODEX Bio", "role": "sector_proxy", "mapping_strength": 0.8}],
+      "event_leaders": {"us": ["LLY", "REGN", "VRTX"], "kr": ["207940.KS", "068270.KS"]}
+    },
+    "new-energy-vehicle": {
+      "transmission_variables": ["电动车销量", "电池价格", "锂镍成本", "产能利用率", "补贴与关税"],
+      "us": [{"symbol": "DRIV", "name": "Global X Autonomous & Electric Vehicles ETF", "role": "theme_proxy", "mapping_strength": 0.75}],
+      "kr": [
+        {"symbol": "305720.KS", "name": "KODEX Secondary Battery Industry", "role": "battery_proxy", "mapping_strength": 0.9},
+        {"symbol": "091180.KS", "name": "KODEX Automobile", "role": "auto_proxy", "mapping_strength": 0.75}
+      ],
+      "event_leaders": {"us": ["TSLA", "ALB"], "kr": ["373220.KS", "006400.KS", "005380.KS"]}
+    },
+    "photovoltaic": {
+      "transmission_variables": ["装机需求", "组件价格", "产能利用率", "利率", "贸易壁垒"],
+      "us": [{"symbol": "TAN", "name": "Invesco Solar ETF", "role": "sector_proxy", "mapping_strength": 0.9}],
+      "kr": [{"symbol": "385510.KS", "name": "KODEX Renewable Energy Active", "role": "broad_clean_energy_proxy", "mapping_strength": 0.55}],
+      "event_leaders": {"us": ["FSLR", "ENPH"], "kr": ["009830.KS"]}
+    },
+    "consumer": {
+      "transmission_variables": ["实际收入", "销量价格组合", "渠道库存", "原料成本", "消费信心"],
+      "us": [{"symbol": "XLP", "name": "Consumer Staples Select Sector SPDR Fund", "role": "sector_proxy", "mapping_strength": 0.65}],
+      "kr": [{"symbol": "266410.KS", "name": "KODEX Consumer Staples", "role": "sector_proxy", "mapping_strength": 0.65}],
+      "event_leaders": {"us": ["PG", "KO", "COST"], "kr": []}
+    },
+    "liquor": {
+      "transmission_variables": ["可选消费需求", "渠道库存", "提价能力", "餐饮宴席", "本地政策"],
+      "us": [{"symbol": "XLP", "name": "Consumer Staples Select Sector SPDR Fund", "role": "weak_sentiment_proxy", "mapping_strength": 0.35}],
+      "kr": [{"symbol": "266410.KS", "name": "KODEX Consumer Staples", "role": "weak_sentiment_proxy", "mapping_strength": 0.3}],
+      "event_leaders": {"us": [], "kr": []},
+      "caveat": "Chinese liquor demand and channel structure are highly local; overseas moves may inform risk appetite, not earnings direction."
+    },
+    "finance": {
+      "transmission_variables": ["收益率曲线", "信用成本", "资产质量", "交易活跃度", "资本监管"],
+      "us": [{"symbol": "XLF", "name": "Financial Select Sector SPDR Fund", "role": "sector_proxy", "mapping_strength": 0.7}],
+      "kr": [{"symbol": "091170.KS", "name": "KODEX Bank", "role": "bank_proxy", "mapping_strength": 0.7}],
+      "event_leaders": {"us": ["JPM", "BAC", "GS"], "kr": []}
+    },
+    "brokerage": {
+      "transmission_variables": ["成交额", "IPO与融资活动", "利率", "信用交易", "资本市场监管"],
+      "us": [{"symbol": "IAI", "name": "iShares U.S. Broker-Dealers & Securities Exchanges ETF", "role": "sector_proxy", "mapping_strength": 0.75}],
+      "kr": [{"symbol": "102970.KS", "name": "KODEX Securities", "role": "sector_proxy", "mapping_strength": 0.8}],
+      "event_leaders": {"us": ["GS", "MS", "CME"], "kr": []}
+    },
+    "defense": {
+      "transmission_variables": ["国防预算", "订单与交付", "地缘冲突", "产能瓶颈", "出口许可"],
+      "us": [{"symbol": "ITA", "name": "iShares U.S. Aerospace & Defense ETF", "role": "sector_proxy", "mapping_strength": 0.8}],
+      "kr": [{"symbol": "012450.KS", "name": "Hanwha Aerospace", "role": "leader_proxy", "mapping_strength": 0.7}],
+      "event_leaders": {"us": ["RTX", "LMT", "NOC"], "kr": ["012450.KS", "047810.KS"]}
+    },
+    "nonferrous": {
+      "transmission_variables": ["全球金属价格", "美元", "库存", "矿山供给", "冶炼成本"],
+      "us": [{"symbol": "XME", "name": "SPDR S&P Metals and Mining ETF", "role": "metals_proxy", "mapping_strength": 0.75}],
+      "kr": [{"symbol": "005490.KS", "name": "POSCO Holdings", "role": "leader_proxy", "mapping_strength": 0.45}],
+      "event_leaders": {"us": ["FCX", "NEM", "ALB"], "kr": ["005490.KS"]}
+    },
+    "coal": {
+      "transmission_variables": ["煤价", "天然气替代", "电力需求", "库存", "安全与产量政策"],
+      "us": [{"symbol": "XME", "name": "SPDR S&P Metals and Mining ETF", "role": "weak_mining_proxy", "mapping_strength": 0.35}],
+      "kr": [],
+      "event_leaders": {"us": ["BTU"], "kr": []},
+      "caveat": "No clean Korean coal-equity proxy is configured; omit Korea rather than force a false comparison."
+    },
+    "electric-power": {
+      "transmission_variables": ["电力需求", "燃料成本", "电价监管", "资本开支", "利率"],
+      "us": [{"symbol": "XLU", "name": "Utilities Select Sector SPDR Fund", "role": "sector_proxy", "mapping_strength": 0.65}],
+      "kr": [{"symbol": "015760.KS", "name": "Korea Electric Power", "role": "leader_proxy", "mapping_strength": 0.55}],
+      "event_leaders": {"us": ["NEE", "CEG", "DUK"], "kr": ["015760.KS"]}
+    },
+    "agriculture": {
+      "transmission_variables": ["农产品价格", "天气", "种植面积", "库存", "化肥饲料成本"],
+      "us": [{"symbol": "MOO", "name": "VanEck Agribusiness ETF", "role": "agribusiness_proxy", "mapping_strength": 0.6}],
+      "kr": [],
+      "event_leaders": {"us": ["DE", "ADM", "NTR"], "kr": []},
+      "caveat": "Use global futures and weather evidence before equity proxies; no clean Korean agriculture proxy is configured."
+    },
+    "real-estate": {
+      "transmission_variables": ["利率", "融资条件", "租金", "销售与库存", "资产负债表"],
+      "us": [{"symbol": "XLRE", "name": "Real Estate Select Sector SPDR Fund", "role": "reit_proxy", "mapping_strength": 0.45}],
+      "kr": [{"symbol": "476800.KS", "name": "KODEX Korea Real Estate REITs Infrastructure", "role": "reit_proxy", "mapping_strength": 0.4}],
+      "event_leaders": {"us": [], "kr": []},
+      "caveat": "REIT cash-flow exposure is not equivalent to Chinese developers' presale and credit exposure."
+    },
+    "infrastructure": {
+      "transmission_variables": ["财政预算", "项目开工", "设备材料订单", "回款", "融资成本"],
+      "us": [{"symbol": "PAVE", "name": "Global X U.S. Infrastructure Development ETF", "role": "theme_proxy", "mapping_strength": 0.65}],
+      "kr": [{"symbol": "117700.KS", "name": "KODEX Construction", "role": "construction_proxy", "mapping_strength": 0.55}],
+      "event_leaders": {"us": ["CAT", "DE", "VMC"], "kr": []}
+    },
+    "dividend": {
+      "transmission_variables": ["无风险利率", "自由现金流", "派息率", "杠杆", "防御偏好"],
+      "us": [{"symbol": "VYM", "name": "Vanguard High Dividend Yield ETF", "role": "style_proxy", "mapping_strength": 0.65}],
+      "kr": [{"symbol": "279530.KS", "name": "KODEX High Dividend", "role": "style_proxy", "mapping_strength": 0.7}],
+      "event_leaders": {"us": [], "kr": []}
+    }
+  }
+}

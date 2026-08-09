@@ -1,0 +1,71 @@
+{
+  "schema": "a-share.instrument-presets/1",
+  "as_of": "2026-08-08",
+  "instruments": {
+    "588080": {
+      "name": "易方达上证科创板50成份交易型开放式指数证券投资基金",
+      "short_name": "科创50ETF易方达",
+      "aliases": ["科创板50", "科创50ETF易方达", "易方达科创50ETF"],
+      "exchange": "SSE",
+      "asset_type": "etf",
+      "tracking_index": {
+        "code": "000688",
+        "name": "上证科创板50成份指数"
+      },
+      "market_benchmark": {
+        "code": "000300",
+        "name": "沪深300"
+      },
+      "exposure_model": {
+        "mode": "live_holdings_required",
+        "reason": "这是由50只科创板大市值证券组成的宽基成长指数，不是单一半导体、AI或创新药ETF。",
+        "required_fields": [
+          "成份股与权重的生效日",
+          "基金最近披露的前十大持仓与报告期",
+          "行业权重",
+          "前十大权重合计",
+          "单一最大成份股权重",
+          "指数调整或基金跟踪误差"
+        ],
+        "sector_buckets": ["technology", "semiconductor", "innovative-drug", "new-energy-vehicle", "other"],
+        "material_exposure_threshold_pct": 10,
+        "stale_after_days": 100
+      },
+      "cross_market": {
+        "mode": "composition_weighted_dynamic",
+        "candidate_presets": ["technology", "semiconductor", "innovative-drug", "new-energy-vehicle"],
+        "aggregation_rule": "仅按同一观察日已核验的行业权重汇总；若缺少实时权重，分别报告各映射，不生成混合外盘分数。",
+        "timing_rule": "美股使用A股观察日前一收盘；韩股日线也只使用严格早于A股观察日的收盘。",
+        "false_shortcut": "不得仅因名称含科创而固定使用SOXX或NASDAQ作为唯一外盘代理。"
+      },
+      "news_focus": [
+        "指数样本与权重调整",
+        "前十大成份股业绩、订单、减持与监管披露",
+        "半导体设备、AI资本开支、医药临床与新能源价格等当前实际暴露的产业变量",
+        "科创板融资、并购、再融资与流动性政策",
+        "出口限制、关税、汇率与无风险利率"
+      ],
+      "positioning_focus": [
+        "ETF份额与净申赎",
+        "二级市场成交额与换手",
+        "折溢价和跟踪偏离",
+        "科创板50ETF期权隐含波动率、偏度、成交量与持仓量",
+        "融资融券与全市场风险偏好"
+      ],
+      "official_sources": [
+        {
+          "role": "security_identity_and_options_underlying",
+          "url": "https://www.sse.com.cn/lawandrules/sselawsrules2025/option/c/c_20250611_10781536.shtml"
+        },
+        {
+          "role": "fund_product_overview",
+          "url": "https://www.sse.com.cn/disclosure/fund/announcement/c/new/2023-06-29/588080_20230629_Q50O.pdf"
+        },
+        {
+          "role": "tracking_index_methodology",
+          "url": "https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/indices/detail/files/zh_CN/000688_Index_Methodology_cn.pdf"
+        }
+      ]
+    }
+  }
+}

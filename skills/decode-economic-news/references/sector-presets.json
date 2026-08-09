@@ -1,0 +1,316 @@
+{
+  "schema": "sector.presets/2",
+  "default_research_profile": "generic-industry",
+  "research_profiles": {
+    "generic-industry": {
+      "valuation_framework": "earnings_cashflow_and_relative_valuation",
+      "actors": ["监管与政策制定者", "上游供应商", "核心企业", "下游客户", "产业资本与二级市场资金"],
+      "questions": ["供需、价格、成本、融资和政策中哪个变量主导本轮变化？", "催化剂能否传导到订单、利润、现金流与估值，传导需要多久？"]
+    },
+    "technology-growth": {
+      "valuation_framework": "growth_cashflow_and_r_and_d_conversion",
+      "actors": ["监管与产业政策制定者", "上游设备/材料供应商", "平台与核心技术公司", "下游客户与资本开支决策者", "产业资本与二级市场资金"],
+      "questions": ["资本开支、库存周期、客户集中度和出口限制处于哪个阶段？", "技术优势能否转化为良率、份额、毛利率与自由现金流？"]
+    },
+    "biopharma": {
+      "valuation_framework": "pipeline_milestone_and_risk_adjusted_cashflow",
+      "actors": ["药品监管机构", "研发与生产企业", "医院/医生/患者", "医保与支付方", "许可合作方", "产业资本与二级市场资金"],
+      "questions": ["临床阶段、主要终点、安全性和竞争格局如何？", "现金跑道、授权条款、专利期、医保与商业化能力能否支持估值？"]
+    },
+    "consumer-brand": {
+      "valuation_framework": "brand_margin_cashflow_and_channel_quality",
+      "actors": ["消费者", "品牌与制造商", "经销商与零售渠道", "原料供应商", "平台与监管机构", "产业资本与二级市场资金"],
+      "questions": ["销量、价格、产品结构和渠道库存分别贡献了多少增长？", "品牌溢价、复购、现金流和经销商利润是否支持当前估值？"]
+    },
+    "financial": {
+      "valuation_framework": "price_to_book_roe_and_credit_cycle",
+      "actors": ["金融监管机构与央行", "金融机构管理层", "储户/投保人/投资者", "融资企业与居民", "资本市场资金"],
+      "questions": ["利率、信用成本、资产质量和资本充足率如何影响盈利？", "PB估值折价反映的是周期压力、资产质量还是商业模式变化？"]
+    },
+    "policy-capex": {
+      "valuation_framework": "order_backlog_margin_and_cash_conversion",
+      "actors": ["产业与国防政策制定者", "预算与采购方", "总装/业主单位", "设备与材料供应商", "金融机构与市场资金"],
+      "questions": ["政策或预算如何转化为可核验订单、交付、回款和利润？", "产能、认证、招标、客户集中和应收账款是否形成瓶颈？"]
+    },
+    "cyclical-resource": {
+      "valuation_framework": "mid_cycle_cashflow_cost_curve_and_balance_sheet",
+      "actors": ["资源与环保监管机构", "矿山/能源生产商", "冶炼与加工企业", "下游工业客户", "贸易商与库存持有者", "产业资本与市场资金"],
+      "questions": ["价格变化来自需求、供给扰动、库存还是金融属性？", "成本曲线、资本开支、产量约束和资产负债表在中周期价格下是否稳健？"]
+    },
+    "utility-income": {
+      "valuation_framework": "regulated_return_free_cashflow_and_dividend",
+      "actors": ["能源与价格监管机构", "发电与电网企业", "燃料供应商", "工商业与居民用户", "长期配置资金"],
+      "questions": ["电价、利用小时、燃料成本和资本开支如何影响自由现金流？", "分红能力来自可持续现金流，还是负债扩张与一次性收益？"]
+    },
+    "agriculture": {
+      "valuation_framework": "biological_cycle_cost_and_normalized_earnings",
+      "actors": ["农业与食品监管机构", "种植/养殖企业", "种业与饲料供应商", "加工流通企业", "消费者", "产业资本与市场资金"],
+      "questions": ["产能、存栏、天气、疫病和粮价处于哪个周期位置？", "单位成本、现金消耗和资产负债表能否穿越价格低谷？"]
+    },
+    "property-credit": {
+      "valuation_framework": "net_asset_value_cash_collection_and_credit_risk",
+      "actors": ["住建与金融监管机构", "地方政府与土地供应方", "开发商与物业运营商", "银行与债权人", "购房者", "产业资本与市场资金"],
+      "questions": ["销售、回款、库存、土地储备和融资成本如何共同影响现金流？", "NAV折价反映流动性、资产质量、政策约束还是治理风险？"]
+    },
+    "dividend-quality": {
+      "valuation_framework": "normalized_free_cashflow_payout_and_balance_sheet",
+      "actors": ["公司管理层与国资股东", "行业监管机构", "客户与供应商", "债权人", "保险/养老金等长期资金", "二级市场资金"],
+      "questions": ["股息是否由常态化自由现金流覆盖，派息率是否可持续？", "高股息是否掩盖盈利下滑、资本开支、杠杆或周期顶部风险？"]
+    }
+  },
+  "presets": {
+    "technology": {
+      "display_name": "科技",
+      "aliases": ["科技", "人工智能", "算力", "软件", "通信设备", "消费电子", "机器人"],
+      "research_profile": "technology-growth",
+      "benchmark": {"code": "515000", "name": "科技ETF华宝"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "931087", "name": "中证科技龙头指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "688981", "name": "中芯国际"}, {"code": "002371", "name": "北方华创"},
+        {"code": "603501", "name": "豪威集团"}, {"code": "300308", "name": "中际旭创"},
+        {"code": "300502", "name": "新易盛"}, {"code": "000977", "name": "浪潮信息"},
+        {"code": "002230", "name": "科大讯飞"}, {"code": "688256", "name": "寒武纪-U"},
+        {"code": "002475", "name": "立讯精密"}, {"code": "603019", "name": "中科曙光"}
+      ]
+    },
+    "semiconductor": {
+      "display_name": "半导体",
+      "aliases": ["半导体", "芯片", "集成电路", "半导体设备", "半导体材料"],
+      "research_profile": "technology-growth",
+      "benchmark": {"code": "512480", "name": "半导体ETF国联安"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "H30184", "name": "中证全指半导体产品与设备指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "688981", "name": "中芯国际"}, {"code": "002371", "name": "北方华创"},
+        {"code": "688012", "name": "中微公司"}, {"code": "603501", "name": "豪威集团"},
+        {"code": "688008", "name": "澜起科技"}, {"code": "300661", "name": "圣邦股份"},
+        {"code": "688126", "name": "沪硅产业"}, {"code": "002049", "name": "紫光国微"}
+      ]
+    },
+    "innovative-drug": {
+      "display_name": "创新药",
+      "aliases": ["创新药", "生物制品", "化学制药", "医疗研发外包", "抗体药物", "细胞治疗"],
+      "research_profile": "biopharma",
+      "benchmark": {"code": "159992", "name": "创新药ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "931152", "name": "中证创新药产业指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600276", "name": "恒瑞医药"}, {"code": "688235", "name": "百济神州-U"},
+        {"code": "688180", "name": "君实生物-U"}, {"code": "688331", "name": "荣昌生物"},
+        {"code": "688520", "name": "神州细胞"}, {"code": "300347", "name": "泰格医药"},
+        {"code": "603259", "name": "药明康德"}, {"code": "002422", "name": "科伦药业"},
+        {"code": "300558", "name": "贝达药业"}, {"code": "688506", "name": "百利天恒-U"}
+      ]
+    },
+    "new-energy-vehicle": {
+      "display_name": "新能源汽车",
+      "aliases": ["新能源汽车", "新能源车", "动力电池", "锂电池", "汽车零部件", "充电桩"],
+      "research_profile": "technology-growth",
+      "benchmark": {"code": "515030", "name": "新能源车ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399976", "name": "中证新能源汽车指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "300750", "name": "宁德时代"}, {"code": "002594", "name": "比亚迪"},
+        {"code": "601633", "name": "长城汽车"}, {"code": "600066", "name": "宇通集团"},
+        {"code": "002050", "name": "三花智控"}, {"code": "300124", "name": "汇川技术"},
+        {"code": "002920", "name": "德赛西威"}, {"code": "300014", "name": "亿纬锂能"}
+      ]
+    },
+    "photovoltaic": {
+      "display_name": "光伏",
+      "aliases": ["光伏", "光伏设备", "硅料", "硅片", "组件", "逆变器"],
+      "research_profile": "technology-growth",
+      "benchmark": {"code": "515790", "name": "光伏ETF华泰柏瑞"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "931151", "name": "中证光伏产业指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "601012", "name": "隆基绿能"}, {"code": "300274", "name": "阳光电源"},
+        {"code": "600438", "name": "通威股份"}, {"code": "002129", "name": "TCL中环"},
+        {"code": "601865", "name": "福莱特"}, {"code": "688599", "name": "天合光能"},
+        {"code": "688223", "name": "晶科能源"}, {"code": "002459", "name": "晶澳科技"}
+      ]
+    },
+    "consumer": {
+      "display_name": "主要消费",
+      "aliases": ["主要消费", "食品饮料", "家用电器", "乳制品", "调味品", "消费龙头"],
+      "research_profile": "consumer-brand",
+      "benchmark": {"code": "159928", "name": "消费ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "000932", "name": "中证主要消费指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600519", "name": "贵州茅台"}, {"code": "000858", "name": "五粮液"},
+        {"code": "600887", "name": "伊利股份"}, {"code": "603288", "name": "海天味业"},
+        {"code": "000333", "name": "美的集团"}, {"code": "000651", "name": "格力电器"},
+        {"code": "000895", "name": "双汇发展"}, {"code": "603345", "name": "安井食品"}
+      ]
+    },
+    "liquor": {
+      "display_name": "白酒",
+      "aliases": ["白酒", "酿酒", "酒类", "高端白酒", "次高端白酒"],
+      "research_profile": "consumer-brand",
+      "benchmark": {"code": "512690", "name": "酒ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399987", "name": "中证酒指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600519", "name": "贵州茅台"}, {"code": "000858", "name": "五粮液"},
+        {"code": "000568", "name": "泸州老窖"}, {"code": "002304", "name": "洋河股份"},
+        {"code": "600809", "name": "山西汾酒"}, {"code": "000596", "name": "古井贡酒"},
+        {"code": "603369", "name": "今世缘"}, {"code": "600702", "name": "舍得酒业"}
+      ]
+    },
+    "finance": {
+      "display_name": "金融",
+      "aliases": ["金融", "银行", "保险", "证券", "多元金融"],
+      "research_profile": "financial",
+      "benchmark": {"code": "510230", "name": "金融ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "000018", "name": "上证180金融股指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600036", "name": "招商银行"}, {"code": "601166", "name": "兴业银行"},
+        {"code": "601318", "name": "中国平安"}, {"code": "601601", "name": "中国太保"},
+        {"code": "600030", "name": "中信证券"}, {"code": "300059", "name": "东方财富"},
+        {"code": "601398", "name": "工商银行"}, {"code": "601288", "name": "农业银行"}
+      ]
+    },
+    "brokerage": {
+      "display_name": "券商",
+      "aliases": ["券商", "证券公司", "证券服务", "财富管理", "投行业务"],
+      "research_profile": "financial",
+      "benchmark": {"code": "512000", "name": "证券ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399975", "name": "中证全指证券公司指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600030", "name": "中信证券"}, {"code": "300059", "name": "东方财富"},
+        {"code": "601211", "name": "国泰海通"}, {"code": "601688", "name": "华泰证券"},
+        {"code": "600999", "name": "招商证券"}, {"code": "000776", "name": "广发证券"},
+        {"code": "000166", "name": "申万宏源"}, {"code": "600958", "name": "东方证券"}
+      ]
+    },
+    "defense": {
+      "display_name": "国防军工",
+      "aliases": ["国防军工", "军工", "航空装备", "航天装备", "船舶制造", "军工电子"],
+      "research_profile": "policy-capex",
+      "benchmark": {"code": "512660", "name": "军工ETF国泰"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399967", "name": "中证军工指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600760", "name": "中航沈飞"}, {"code": "600893", "name": "航发动力"},
+        {"code": "600150", "name": "中国船舶"}, {"code": "002179", "name": "中航光电"},
+        {"code": "000768", "name": "中航西飞"}, {"code": "300699", "name": "光威复材"},
+        {"code": "000519", "name": "中兵红箭"}, {"code": "600316", "name": "洪都航空"}
+      ]
+    },
+    "nonferrous": {
+      "display_name": "有色金属",
+      "aliases": ["有色金属", "工业金属", "贵金属", "稀土", "锂", "铜", "铝"],
+      "research_profile": "cyclical-resource",
+      "benchmark": {"code": "512400", "name": "有色金属ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "601899", "name": "紫金矿业"}, {"code": "603993", "name": "洛阳钼业"},
+        {"code": "601600", "name": "中国铝业"}, {"code": "002460", "name": "赣锋锂业"},
+        {"code": "002466", "name": "天齐锂业"}, {"code": "600547", "name": "山东黄金"},
+        {"code": "600111", "name": "北方稀土"}, {"code": "603799", "name": "华友钴业"}
+      ]
+    },
+    "coal": {
+      "display_name": "煤炭",
+      "aliases": ["煤炭", "动力煤", "焦煤", "煤化工", "煤炭开采"],
+      "research_profile": "cyclical-resource",
+      "benchmark": {"code": "515220", "name": "煤炭ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399998", "name": "中证煤炭指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "601088", "name": "中国神华"}, {"code": "601225", "name": "陕西煤业"},
+        {"code": "600188", "name": "兖矿能源"}, {"code": "000983", "name": "山西焦煤"},
+        {"code": "601898", "name": "中煤能源"}, {"code": "601699", "name": "潞安环能"},
+        {"code": "600985", "name": "淮北矿业"}, {"code": "601666", "name": "平煤股份"}
+      ]
+    },
+    "electric-power": {
+      "display_name": "电力公用事业",
+      "aliases": ["电力", "公用事业", "水电", "核电", "火电", "绿色电力"],
+      "research_profile": "utility-income",
+      "benchmark": {"code": "159611", "name": "电力ETF广发"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600900", "name": "长江电力"}, {"code": "600795", "name": "国电电力"},
+        {"code": "601985", "name": "中国核电"}, {"code": "600025", "name": "华能水电"},
+        {"code": "600905", "name": "三峡能源"}, {"code": "600011", "name": "华能国际"},
+        {"code": "600886", "name": "国投电力"}, {"code": "600674", "name": "川投能源"}
+      ]
+    },
+    "agriculture": {
+      "display_name": "农业",
+      "aliases": ["农业", "养殖", "种业", "饲料", "农产品", "畜牧业"],
+      "research_profile": "agriculture",
+      "benchmark": {"code": "159825", "name": "农业ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "002714", "name": "牧原股份"}, {"code": "300498", "name": "温氏股份"},
+        {"code": "002311", "name": "海大集团"}, {"code": "000998", "name": "隆平高科"},
+        {"code": "002385", "name": "大北农"}, {"code": "000876", "name": "新希望"},
+        {"code": "002299", "name": "圣农发展"}, {"code": "600598", "name": "北大荒"}
+      ]
+    },
+    "real-estate": {
+      "display_name": "房地产",
+      "aliases": ["房地产", "地产开发", "物业管理", "产业园区", "商业地产"],
+      "research_profile": "property-credit",
+      "benchmark": {"code": "512200", "name": "房地产ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "600048", "name": "保利发展"}, {"code": "000002", "name": "万科A"},
+        {"code": "001979", "name": "招商蛇口"}, {"code": "002244", "name": "滨江集团"},
+        {"code": "600325", "name": "华发股份"}, {"code": "601155", "name": "新城控股"},
+        {"code": "600383", "name": "金地集团"}, {"code": "600895", "name": "张江高科"}
+      ]
+    },
+    "infrastructure": {
+      "display_name": "基建工程",
+      "aliases": ["基建", "基础设施", "建筑工程", "轨道交通", "水利建设", "工程机械"],
+      "research_profile": "policy-capex",
+      "benchmark": {"code": "516970", "name": "基建ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "399995", "name": "中证基建工程指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "601668", "name": "中国建筑"}, {"code": "601390", "name": "中国中铁"},
+        {"code": "601186", "name": "中国铁建"}, {"code": "601800", "name": "中国交建"},
+        {"code": "601669", "name": "中国电建"}, {"code": "601868", "name": "中国能建"},
+        {"code": "600820", "name": "隧道股份"}, {"code": "600502", "name": "安徽建工"}
+      ]
+    },
+    "dividend": {
+      "display_name": "高股息红利",
+      "aliases": ["红利", "高股息", "高分红", "央企红利", "低估值红利"],
+      "research_profile": "dividend-quality",
+      "benchmark": {"code": "510880", "name": "红利ETF"},
+      "market_benchmark": {"code": "000300", "name": "沪深300"},
+      "reference_index": {"code": "000015", "name": "上证红利指数"},
+      "seed_as_of": "2026-08-08",
+      "seed_universe": [
+        {"code": "601088", "name": "中国神华"}, {"code": "600900", "name": "长江电力"},
+        {"code": "600028", "name": "中国石化"}, {"code": "601006", "name": "大秦铁路"},
+        {"code": "601398", "name": "工商银行"}, {"code": "601288", "name": "农业银行"},
+        {"code": "601988", "name": "中国银行"}, {"code": "600104", "name": "上汽集团"}
+      ]
+    }
+  }
+}

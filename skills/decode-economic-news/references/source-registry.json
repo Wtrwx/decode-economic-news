@@ -1,0 +1,148 @@
+{
+  "schema": "source.registry/1",
+  "sources": [
+    {
+      "id": "world-bank",
+      "publisher": "World Bank",
+      "kind": "official_documented_api",
+      "health_url": "https://api.worldbank.org/v2/country/CHN/indicator/SP.POP.TOTL?format=json&date=2023&per_page=2",
+      "expect": "json",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.97
+    },
+    {
+      "id": "fred",
+      "publisher": "Federal Reserve Bank of St. Louis",
+      "kind": "official_documented_api",
+      "health_url": "https://api.stlouisfed.org/fred/series?series_id=DGS10&file_type=json&api_key=${FRED_API_KEY}",
+      "expect": "json",
+      "required_env": "FRED_API_KEY",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.98
+    },
+    {
+      "id": "eurostat",
+      "publisher": "Eurostat",
+      "kind": "official_documented_api",
+      "health_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_pjan?lang=en&geo=LU&sex=T&age=TOTAL&time=2023",
+      "expect": "json",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.95
+    },
+    {
+      "id": "cninfo",
+      "publisher": "Shenzhen Securities Information Co., Ltd.",
+      "kind": "statutory_disclosure_platform",
+      "health_url": "https://www.cninfo.com.cn/new/data/szse_stock.json",
+      "expect": "json",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.82
+    },
+    {
+      "id": "tencent-market",
+      "publisher": "Tencent Finance",
+      "kind": "public_market_portal",
+      "health_url": "https://qt.gtimg.cn/q=sh000001",
+      "expect": "text",
+      "authority_score": 0.65,
+      "endpoint_stability": 0.78
+    },
+    {
+      "id": "tencent-kline",
+      "publisher": "Tencent Finance",
+      "kind": "public_market_portal",
+      "health_url": "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh515000%2Cday%2C%2C%2C5%2Cqfq",
+      "expect": "json",
+      "authority_score": 0.65,
+      "endpoint_stability": 0.80
+    },
+    {
+      "id": "eastmoney-market",
+      "publisher": "Eastmoney",
+      "kind": "public_market_portal",
+      "health_url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=2&po=1&np=1&fltt=2&invt=2&fs=m%3A1%2Bt%3A2&fields=f12%2Cf14%2Cf3",
+      "expect": "json",
+      "authority_score": 0.62,
+      "endpoint_stability": 0.62,
+      "min_interval_seconds": 1.2
+    },
+    {
+      "id": "gdelt-doc",
+      "publisher": "GDELT Project",
+      "kind": "media_discovery_index",
+      "health_url": "https://api.gdeltproject.org/api/v2/doc/doc?query=economy&mode=artlist&format=json&maxrecords=1&timespan=1d",
+      "expect": "json",
+      "authority_score": 0.70,
+      "endpoint_stability": 0.55,
+      "min_interval_seconds": 5.2
+    },
+    {
+      "id": "sec-edgar",
+      "publisher": "U.S. Securities and Exchange Commission",
+      "kind": "statutory_disclosure_platform",
+      "health_url": "https://data.sec.gov/submissions/CIK0000320193.json",
+      "expect": "json",
+      "required_env": "SEC_USER_AGENT",
+      "headers": {
+        "User-Agent": "${SEC_USER_AGENT}",
+        "Accept-Encoding": "gzip, deflate"
+      },
+      "authority_score": 0.99,
+      "endpoint_stability": 0.98,
+      "min_interval_seconds": 0.12
+    },
+    {
+      "id": "clinicaltrials-gov",
+      "publisher": "ClinicalTrials.gov",
+      "kind": "official_documented_api",
+      "health_url": "https://clinicaltrials.gov/api/v2/version",
+      "expect": "json",
+      "authority_score": 0.97,
+      "endpoint_stability": 0.96
+    },
+    {
+      "id": "federal-reserve-press",
+      "publisher": "Board of Governors of the Federal Reserve System",
+      "kind": "official_feed",
+      "health_url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "expect": "text",
+      "authority_score": 0.99,
+      "endpoint_stability": 0.96,
+      "min_interval_seconds": 0.5
+    },
+    {
+      "id": "fda-press",
+      "publisher": "U.S. Food and Drug Administration",
+      "kind": "official_feed",
+      "health_url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
+      "expect": "text",
+      "authority_score": 0.99,
+      "endpoint_stability": 0.90,
+      "min_interval_seconds": 0.5
+    },
+    {
+      "id": "eia-today-in-energy",
+      "publisher": "U.S. Energy Information Administration",
+      "kind": "official_feed",
+      "health_url": "https://www.eia.gov/rss/todayinenergy.xml",
+      "expect": "text",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.94,
+      "min_interval_seconds": 0.5
+    },
+    {
+      "id": "yahoo-finance-chart",
+      "publisher": "Yahoo Finance",
+      "kind": "public_market_portal",
+      "health_url": "https://query2.finance.yahoo.com/v8/finance/chart/SOXX?range=5d&interval=1d&includeAdjustedClose=true",
+      "expect": "json",
+      "headers": {
+        "User-Agent": "Mozilla/5.0 decode-economic-news/1.0",
+        "Accept": "application/json"
+      },
+      "authority_score": 0.62,
+      "endpoint_stability": 0.55,
+      "min_interval_seconds": 0.7
+    }
+  ]
+}

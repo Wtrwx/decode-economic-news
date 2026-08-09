@@ -1,0 +1,4 @@
+interface:
+  display_name: "A股跨市场因果预测与荐股"
+  short_description: "按事件时钟编排新闻、动量和美韩映射，分析个股、ETF与17类板块"
+  default_prompt: "Use $decode-economic-news to identify the A-share or ETF exposure, choose the news-versus-momentum-versus-overseas order through the event clock, test U.S./Korean causal read-through and A-share acceptance, backtest signals, and produce gated conditional conclusions or recommendations."

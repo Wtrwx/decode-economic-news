@@ -1,0 +1,45 @@
+{
+  "schema": "official.feed.presets/1",
+  "presets": {
+    "fed-all-press": {
+      "id": "federal-reserve-press",
+      "publisher": "Board of Governors of the Federal Reserve System",
+      "category": "monetary-policy-and-regulation",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "authority_score": 0.99,
+      "endpoint_stability": 0.96
+    },
+    "fda-press": {
+      "id": "fda-press",
+      "publisher": "U.S. Food and Drug Administration",
+      "category": "drug-and-device-regulation",
+      "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml",
+      "authority_score": 0.99,
+      "endpoint_stability": 0.90
+    },
+    "fda-medwatch": {
+      "id": "fda-medwatch",
+      "publisher": "U.S. Food and Drug Administration",
+      "category": "drug-and-device-safety",
+      "url": "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/medwatch/rss.xml",
+      "authority_score": 0.99,
+      "endpoint_stability": 0.86
+    },
+    "eia-today-in-energy": {
+      "id": "eia-today-in-energy",
+      "publisher": "U.S. Energy Information Administration",
+      "category": "energy-analysis",
+      "url": "https://www.eia.gov/rss/todayinenergy.xml",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.94
+    },
+    "eia-press": {
+      "id": "eia-press",
+      "publisher": "U.S. Energy Information Administration",
+      "category": "energy-releases",
+      "url": "https://www.eia.gov/rss/press_rss.xml",
+      "authority_score": 0.98,
+      "endpoint_stability": 0.94
+    }
+  }
+}

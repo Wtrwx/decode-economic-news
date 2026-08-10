@@ -77,7 +77,8 @@ def event_clock_stage() -> dict[str, Any]:
         "P1_blocking",
         "用快速扫描决定新闻原稿与本地价格状态谁先进入P2。",
         [
-            "扫描过去72小时官方披露、监管发布、指数调整和核心成份股事件。",
+            "扫描24小时、7日和30日三层事件窗口；短窗找触发，长窗找仍在定价的持续变量。",
+            "官方披露、监管发布和指数调整之外，主动检查Reuters、Bloomberg、Financial Times；每家必须记录已打开、无相关结果、受限或失败，不得静默跳过。",
             "区分传闻、提案、正式发布、批准、生效和结果；记录首次公开时间。",
             "仅当原始来源可打开、共享变量明确且可能在预测期改变现金流或折现率时，标记confirmed_material。",
         ],
@@ -109,7 +110,8 @@ def news_stage(*, verification_first: bool = False) -> dict[str, Any]:
         "P2_high",
         purpose,
         [
-            "先开交易所/公司/监管/指数机构原稿，再用媒体补充背景与不同观点。",
+            "按事件来源决定顺序：正式公告先开交易所/公司/监管原稿；独家报道或异常价格先开核心媒体原文，再回查官方确认。",
+            "用Reuters找突发、独家与实地证据，用Bloomberg找市场预期与定价，用Financial Times找结构约束和竞争解释。",
             "提取谁作出什么决定、何时生效、规模多大、影响订单/价格/成本/现金流还是折现率。",
             "写出共同解释及其局限，并提出至少一个竞争解释或反事实。",
         ],
@@ -202,6 +204,7 @@ def command_templates(instrument: dict[str, Any], horizon: str) -> list[str]:
     code = instrument["code"]
     market_code = str((instrument.get("market_benchmark") or {}).get("code") or "000300")
     commands = [
+        f"python3 scripts/list_browser_news_sites.py --tier core --topic '{code} latest material event' --output work/{code}-browser-search-plan.json",
         f"python3 scripts/fetch_price_history.py --code {code} --code {market_code} --days 360 --output work/{code}-history-preliminary.json",
         f"python3 scripts/forecast_sector.py work/{code}-history-preliminary.json --benchmark {code} --market-benchmark {market_code} --output work/{code}-trend.json",
         "python3 scripts/fetch_a_share_sentiment.py --output work/a-share-snapshot.json",
@@ -214,6 +217,10 @@ def command_templates(instrument: dict[str, Any], horizon: str) -> list[str]:
     commands.append(
         f"# Replace preliminary history with a current constituent universe before publishing a {horizon} breadth-based forecast."
     )
+    commands.extend([
+        f"# After browser capture: python3 scripts/build_news_coverage.py --plan work/{code}-browser-search-plan.json --capture work/{code}-browser-capture.json --output work/{code}-news-coverage.json",
+        f"# After replacing the preliminary series with dated constituents: python3 scripts/backtest_sector_signal.py work/{code}-history-point-in-time.json --benchmark {code} --market-benchmark {market_code} --horizon {horizon.removesuffix('d') if horizon.endswith('d') and horizon in ('5d', '20d') else 20} --output work/{code}-signal-backtest.json",
+    ])
     return commands
 
 
@@ -242,6 +249,8 @@ def build_plan(
         "publication_requirements": [
             "标明观察日、预测周期、成份/持仓日期和比较基准",
             "原始来源支持核心事件与传导链",
+            "Reuters/Bloomberg/Financial Times核心媒体扫描均有明确结果，news coverage门禁通过",
+            "板块分数的独立走样本门禁为usable；否则必须abstain",
             "外盘使用严格更早收盘并剔除本国宽基共同因子",
             "ETF外盘映射按实时暴露选择；缺少权重时不合成",
             "给出情景、触发、失效、复核日、覆盖率和数据偏差",

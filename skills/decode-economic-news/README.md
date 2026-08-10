@@ -16,6 +16,8 @@
 - 科技、半导体、创新药、新能源、消费、金融、军工、周期等多板块预测
 - ETF成份暴露、资金、折溢价和期权定位分析
 - 5日/20日趋势信号、选股、扩展窗口回测和条件荐股
+- Reuters/Bloomberg/FT 主动新闻雷达与逐站覆盖门禁
+- 板块分数独立走样本检验；样本、单调性或当前分桶不合格时自动 `abstain`
 - API、浏览器和缓存降级的数据采集流程
 
 ### 强制依赖
@@ -50,6 +52,8 @@ python3 scripts/install.py \
 ```
 
 路径既可以是 `a-stock-data` 目录，也可以直接指向它的 `SKILL.md`。
+
+如果收到的是离线 bundle，解压后 `decode-economic-news/` 与 `a-stock-data/` 会位于同一级目录。进入 `decode-economic-news/` 后直接运行 `python3 scripts/install.py`，安装器会自动识别同级依赖。
 
 #### 情况三：明确允许从上游 GitHub 拉取依赖
 
@@ -104,6 +108,10 @@ python3 test_pipeline.py
 python3 build_a_share_outlook_plan.py \
   --code 588080 --horizon 20d --session after_close \
   --event-state unknown --output /tmp/588080-plan.json
+python3 list_browser_news_sites.py --tier core --topic '588080 最新事件' \
+  --output /tmp/588080-browser-plan.json
+python3 backtest_sector_signal.py work/588080-history.json \
+  --horizon 20 --output /tmp/588080-signal-backtest.json
 ```
 
 ### 快速使用
@@ -144,6 +152,8 @@ It reproduces the analytical structure—contradiction, evidence, incentives and
 - Multi-sector forecasts covering technology, semiconductors, innovative drugs, new energy, consumer, finance, defense, and cyclicals
 - ETF exposure, flow, premium/discount, and option-positioning analysis
 - 5-day/20-day trend signals, screening, expanding walk-forward backtests, and gated conditional recommendations
+- Proactive Reuters/Bloomberg/FT radar with explicit per-publisher coverage gates
+- Separate walk-forward validation of sector scores with mandatory `abstain` for sparse, non-monotonic, or neutral signals
 - Reproducible API, browser, cache, and degraded-source workflows
 
 ### Required dependency
@@ -178,6 +188,8 @@ python3 scripts/install.py \
 ```
 
 The path may point to the `a-stock-data` directory or directly to its `SKILL.md`.
+
+In the offline bundle, `decode-economic-news/` and `a-stock-data/` are sibling directories. After extraction, enter `decode-economic-news/` and run `python3 scripts/install.py`; the installer discovers the sibling dependency automatically.
 
 #### Explicitly fetch the reviewed upstream dependency
 
@@ -232,6 +244,10 @@ python3 test_pipeline.py
 python3 build_a_share_outlook_plan.py \
   --code 588080 --horizon 20d --session after_close \
   --event-state unknown --output /tmp/588080-plan.json
+python3 list_browser_news_sites.py --tier core --topic '588080 latest material event' \
+  --output /tmp/588080-browser-plan.json
+python3 backtest_sector_signal.py work/588080-history.json \
+  --horizon 20 --output /tmp/588080-signal-backtest.json
 ```
 
 ### Example prompts

@@ -33,7 +33,7 @@ Grade publisher authority and endpoint stability separately.
 - Preserve data vintages when the source supports revisions.
 - Inject proxy credentials through environment variables or a secret manager. Never write proxy URLs with user information to source files, command-line arguments, cache metadata or evidence documents.
 - A proxy changes network routing, not source authority. Do not use it to bypass authentication, paywalls, access controls or publisher terms.
-- Prefer an API or connector before browser collection. Use a browser for rendered pages, site search, pagination, visual verification or an existing authorized session.
+- Prefer an API or connector for structured official facts. Independently run the browser core-media radar for current international/cross-market outlooks, exclusives, rumors, stakeholder reactions and unexplained price moves; it is complementary evidence, not a fallback. Record explicit negative and access-restricted outcomes.
 - Never export cookies, browser storage, passwords, authorization headers or profiles. A browser-visible page proves only what was displayed at capture time.
 
 ## Corroboration

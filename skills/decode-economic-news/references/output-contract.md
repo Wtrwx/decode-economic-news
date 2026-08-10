@@ -28,6 +28,8 @@ Each fact requires `fact_id`, `claim`, `publisher`, `source_url`, `retrieved_at`
 
 Browser collection first uses `browser.news.capture/1` as documented in [browser-news-workflow.md](browser-news-workflow.md). `build_browser_news_source.py` converts it to `evidence.source/1`, removes tracking parameters, distinguishes discovery results from opened original pages, truncates excerpts and excludes browser session data.
 
+`build_news_coverage.py` combines `browser.news.search-plan/1` and `browser.news.capture/1` into `browser.news.coverage/1`. Its gate fails when a required publisher was silently skipped or failed. A recorded no-result, paywall or login restriction is an accounted outcome; it does not become substantive evidence.
+
 ## Signal document
 
 Every deterministic indicator script returns `evidence.signal/1` with `signal_type`, `method_version`, `as_of`, `values`, `inputs`, `coverage`, and `warnings`.
@@ -65,6 +67,8 @@ Sector forecasts and stock selections remain compatible with `evidence.signal/1`
 
 `model.backtest/1` stores walk-forward settings, evaluation dates, cost assumptions, aggregate returns, score buckets and warnings. Do not merge a backtest into an evidence pack without carrying its survivorship and sample-size warnings.
 
+`model.signal-backtest/1` tests the sector score itself. Its gate is `usable` only when the total sample is adequate, score-to-excess-return monotonicity is positive, and the current score bucket supports the claimed direction. Otherwise the mandatory status is `abstain`.
+
 ## Recommendation
 
 `build_recommendation.py` returns `stock.recommendation/1` with:
@@ -76,3 +80,19 @@ Sector forecasts and stock selections remain compatible with `evidence.signal/1`
 - `warnings`: model, data, backtest and suitability limitations.
 
 Only a finalized `prediction.brief/1` may feed this output. Preserve all upstream hashes.
+
+## Research journal
+
+`research_journal.py save` creates an immutable `research.journal-run/1` manifest. Preserve:
+
+- topic, observation date, horizon, instruments and tags;
+- stance, decision, confidence, thesis and planned review date;
+- the conclusion artifact and every material upstream artifact by role;
+- artifact schema, method version, selected gate/metric snapshots, byte size and SHA-256;
+- a content fingerprint that makes identical saves idempotent.
+
+Store artifact bytes once under a content-addressed `objects/` path. Do not depend on their original working paths after saving.
+
+`research_journal.py review` adds `research.journal-review/1` without modifying the run manifest. Record observation date, thesis status, realized and benchmark returns, decision quality, notes and supporting outcome artifacts. Keep thesis correctness separate from decision quality and realized return.
+
+Use `list`, `show` and `compare` to retrieve dated conclusions; use `stats` only after checking review coverage. Run `verify` before migration or aggregate analysis.

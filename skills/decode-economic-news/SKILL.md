@@ -1,6 +1,6 @@
 ---
 name: decode-economic-news
-description: Research and explain economic, business, industrial-policy, company and capital-market events with reproducible API or browser-assisted news collection, data, sentiment, dynamic news-vs-momentum-vs-overseas priority, U.S./Korean peer read-through, named A-share/ETF outlooks, multi-sector forecasts, walk-forward backtests, stock screening and conditional stock recommendations grounded in causal evidence. Use for 财经新闻解读、浏览器采集新闻、大A/A股、个股或ETF未来走势、美股韩股联动、跨市场映射、A股行业轮动、科技/半导体/创新药/新能源车/光伏/消费/白酒/金融/券商/军工/有色/煤炭/电力/农业/地产/基建/红利等板块走势、选股、荐股、仓位与止损、股票预测、题材热度、财经口播，以及要求采用“反常现象—数据—利益—深层原因—影响”逻辑的任务。
+description: Research and explain economic, business, industrial-policy, company and capital-market events with reproducible API or browser-assisted news collection, data, sentiment, dynamic news-vs-momentum-vs-overseas priority, U.S./Korean peer read-through, named A-share/ETF outlooks, multi-sector forecasts, walk-forward backtests, stock screening, conditional recommendations, and persistent retrieval/comparison/review of prior research runs. Use for 财经新闻解读、浏览器采集新闻、大A/A股、个股或ETF未来走势、美股韩股联动、跨市场映射、A股行业轮动、科技/半导体/创新药/新能源车/光伏/消费/白酒/金融/券商/军工/有色/煤炭/电力/农业/地产/基建/红利等板块走势、选股、荐股、仓位与止损、股票预测、题材热度、财经口播、历史结论读取、预测复盘、研究记录比较，以及要求采用“反常现象—数据—利益—深层原因—影响”逻辑的任务。
 ---
 
 # Decode Economic News
@@ -24,16 +24,18 @@ Do not claim full A-share coverage when `$a-stock-data` or its required runtime 
 ## Workflow
 
 1. Classify the request as company, industry, policy, macro, market, or mixed.
-2. State the apparent contradiction as one question. Do not assume the answer.
-3. For a named A-share or ETF outlook, first read [a-share-outlook-workflow.md](references/a-share-outlook-workflow.md), load [a-share-instrument-presets.json](references/a-share-instrument-presets.json), and run `build_a_share_outlook_plan.py`. Follow its event-clock branch instead of choosing news, foreign markets or momentum by habit.
-4. Read [source-catalog.md](references/source-catalog.md), then collect current evidence with the scripts in `scripts/`. Prefer official sources and disclosures. Use market portals only for data that official sources do not publish in a machine-friendly form.
+2. Search prior runs with `research_journal.py list`; treat them as dated historical evidence and refresh stale inputs.
+3. State the apparent contradiction as one question. Do not assume the answer.
+4. For a named A-share or ETF outlook, first read [a-share-outlook-workflow.md](references/a-share-outlook-workflow.md), load [a-share-instrument-presets.json](references/a-share-instrument-presets.json), and run `build_a_share_outlook_plan.py`. Follow its event-clock branch instead of choosing news, foreign markets or momentum by habit.
+5. Read [source-catalog.md](references/source-catalog.md), then collect current evidence with the scripts in `scripts/`. Route by event origin: official releases lead scheduled/statutory events; Reuters/Bloomberg/Financial Times lead exclusives, rumors, stakeholder reactions and unexplained price moves before official corroboration. For a current market outlook, every planned core-media check must leave an explicit outcome; silent skips fail the research gate. Use market portals only for data that official sources do not publish in a machine-friendly form.
    For any A-share or “大A” market question, also read [cross-market-readthrough.md](references/cross-market-readthrough.md) and check mapped U.S. and Korean peers unless the preset explicitly says no clean proxy exists.
-5. Build `evidence_pack.json` with `build_evidence_pack.py` and validate it with `validate_evidence.py`.
-6. Separate every material statement into fact, inference, opinion, or conditional forecast.
-7. Map actors, goals, constraints, decisions and transmission effects.
-8. Test at least one competing explanation or counterfactual.
-9. Draft the requested outline, article, or spoken script. Cite fact IDs while reasoning; convert them to readable source links in the final output.
-10. Run the final integrity checklist below.
+6. Build `evidence_pack.json` with `build_evidence_pack.py` and validate it with `validate_evidence.py`.
+7. Separate every material statement into fact, inference, opinion, or conditional forecast.
+8. Map actors, goals, constraints, decisions and transmission effects.
+9. Test at least one competing explanation or counterfactual.
+10. Draft the requested outline, article, or spoken script. Cite fact IDs while reasoning; convert them to readable source links in the final output.
+11. For every forecast, recommendation or source-intensive causal conclusion, save the final conclusion, material evidence and gate outputs with `research_journal.py save` before publication. Set a review date.
+12. Run the final integrity checklist below.
 
 Do not draft a confident causal story when evidence validation fails. Return missing evidence and research questions instead.
 
@@ -62,12 +64,14 @@ python3 scripts/compute_market_mood.py work/a-share-snapshot.json \
 python3 scripts/fetch_gdelt_news.py --query 'semiconductor export controls' \
   --timespan 7d --max-records 50 --output work/gdelt-news.json
 
-# Browser fallback for JS-rendered, site-search or signed-in pages
-# First follow references/browser-news-workflow.md and create browser-capture.json.
+# Proactive core-media radar for every current international/cross-market outlook.
+# Create browser-capture.json with explicit outcomes for every planned publisher.
 python3 scripts/list_browser_news_sites.py --tier core \
   --topic 'semiconductor export controls' --output work/browser-search-plan.json
 python3 scripts/build_browser_news_source.py work/browser-capture.json \
   --output work/browser-news.json
+python3 scripts/build_news_coverage.py --plan work/browser-search-plan.json \
+  --capture work/browser-capture.json --output work/news-coverage.json
 
 # Original U.S. filings; identify the caller per SEC policy
 export SEC_USER_AGENT='Research Team contact@example.com'
@@ -111,6 +115,21 @@ python3 scripts/source_health.py --output work/source-health.json
 
 All network scripts cache raw responses, retry transient failures, record checksums and surface stale/degraded results. Never suppress an empty or malformed response as success. Treat GDELT and browser search entries as discovery leads, browser-opened pages as observations, feed entries as official publication indexes, filing metadata as submission facts, registry status as sponsor-submitted data, and Yahoo Finance charts as undocumented auxiliary market data; verify linked source text before making a substantive claim. Read [browser-news-workflow.md](references/browser-news-workflow.md) and its corpus-backed [blogger-news-sites.json](references/blogger-news-sites.json) before using a browser to collect news.
 
+## Research Journal and Review
+
+Read [research-journal.md](references/research-journal.md) before saving or reusing prior research. Prefer a persistent archive outside the installed Skill:
+
+```bash
+export DECODE_ECONOMIC_NEWS_ARCHIVE=/absolute/workspace/path/research-journal
+python3 scripts/research_journal.py list --instrument 588080 --limit 10
+python3 scripts/research_journal.py show <run-id>
+python3 scripts/research_journal.py compare <older-run-id> <newer-run-id>
+python3 scripts/research_journal.py stats --group-by tag
+python3 scripts/research_journal.py verify
+```
+
+Keep each original run immutable. Append realized outcomes with `research_journal.py review`; never rewrite the old conclusion after observing the result. Save structured artifacts by role so a later agent can retrieve the exact evidence pack, forecast, backtest, coverage gate or recommendation by hash.
+
 ## Forecasting and Stock Selection
 
 Read [forecasting-policy.md](references/forecasting-policy.md) before producing any market forecast or candidate list. Read [sector-presets.json](references/sector-presets.json) for supported aliases, ETF proxies, seed universes and sector-specific research profiles.
@@ -153,12 +172,16 @@ python3 scripts/select_stocks.py "work/$SECTOR-history.json" \
 python3 scripts/backtest_selector.py "work/$SECTOR-history.json" \
   --horizon 20 --top 10 --cost-bps 20 \
   --output "work/$SECTOR-backtest.json"
+python3 scripts/backtest_sector_signal.py "work/$SECTOR-history.json" \
+  --horizon 20 --output "work/$SECTOR-signal-backtest.json"
 
 # Convert quantitative leads into the corpus-derived causal research scaffold
 python3 scripts/build_prediction_brief.py --topic "$SECTOR 板块未来20日" \
   --preset "$SECTOR" --forecast "work/$SECTOR-forecast.json" \
   --selection "work/$SECTOR-selection.json" --backtest "work/$SECTOR-backtest.json" \
   --cross-market-signal "work/$SECTOR-cross-market-signal.json" \
+  --news-coverage "work/$SECTOR-news-coverage.json" \
+  --signal-backtest "work/$SECTOR-signal-backtest.json" \
   --output "work/$SECTOR-brief.json"
 python3 scripts/validate_prediction.py --forecast "work/$SECTOR-forecast.json" \
   --selection "work/$SECTOR-selection.json" --backtest "work/$SECTOR-backtest.json" \
@@ -184,6 +207,8 @@ Read [recommendation-policy.md](references/recommendation-policy.md) before reco
 python3 scripts/finalize_prediction_brief.py --brief work/technology-brief-completed.json \
   --forecast work/technology-forecast.json --selection work/technology-selection.json \
   --evidence-pack work/evidence-pack.json --backtest work/technology-backtest.json \
+  --news-coverage work/technology-news-coverage.json \
+  --signal-backtest work/technology-signal-backtest.json \
   --output work/technology-brief-final.json
 python3 scripts/build_recommendation.py --forecast work/technology-forecast.json \
   --selection work/technology-selection.json --backtest work/technology-backtest.json \
@@ -257,6 +282,8 @@ Do not copy signature phrases from the corpus mechanically. Reproduce the reason
 - Stock screens state the universe, as-of date, horizon and exclusion rules.
 - Backtests use only information available at each historical decision date and include costs.
 - Historical hit rates are omitted when the walk-forward sample is insufficient.
+- Reuters and every other planned core publisher has an explicit opened/no-result/restricted/failed outcome; a plan alone is not coverage.
+- A raw sector score is translated into a directional view only when `model.signal-backtest/1` says `usable`; otherwise the conclusion is `abstain`.
 - Recommendations match the stated or explicitly defaulted risk profile.
 - Every conditional buy has a position cap, entry rule, exit/invalidation rule and review date.
 - Market mood and text sentiment are supporting signals, not standalone recommendation grounds.

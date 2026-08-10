@@ -13,6 +13,7 @@ from evidence_core import atomic_write_json, utc_now
 
 REGISTRY_PATH = Path(__file__).resolve().parent.parent / "references" / "blogger-news-sites.json"
 VALID_TIERS = ("core", "secondary", "occasional")
+CORE_ORDER = {"reuters": 0, "bloomberg": 1, "financial-times": 2}
 
 
 def load_registry(path: Path = REGISTRY_PATH) -> dict[str, Any]:
@@ -37,7 +38,15 @@ def select_sites(
             continue
         selected.append(site)
     order = {tier: index for index, tier in enumerate(VALID_TIERS)}
-    return sorted(selected, key=lambda item: (order.get(item.get("tier"), 99), -int(item.get("corpus_files", 0)), item["id"]))
+    return sorted(
+        selected,
+        key=lambda item: (
+            order.get(item.get("tier"), 99),
+            CORE_ORDER.get(item.get("id"), 99),
+            -int(item.get("corpus_files", 0)),
+            item["id"],
+        ),
+    )
 
 
 def build_plan(sites: list[dict[str, Any]], topic: str) -> dict[str, Any]:
@@ -45,16 +54,21 @@ def build_plan(sites: list[dict[str, Any]], topic: str) -> dict[str, Any]:
     if not clean_topic:
         raise ValueError("topic must not be empty")
     queries = []
-    for site in sites:
+    for priority, site in enumerate(sites, start=1):
         for domain in site.get("domains") or []:
             queries.append(
                 {
                     "site_id": site["id"],
                     "publisher": site["publisher"],
                     "tier": site["tier"],
+                    "priority": priority,
+                    "domain": domain,
                     "query": f"site:{domain} {clean_topic}",
                     "homepage": site["homepage"],
                     "access_model": site["access_model"],
+                    "role": site.get("role"),
+                    "must_attempt": True,
+                    "required_outcome": "opened_original, no_relevant_result, paywalled, login_required, search_results_only, or failed",
                     "result_policy": "Open the original result before capture; a search snippet remains a discovery lead.",
                 }
             )
@@ -63,6 +77,12 @@ def build_plan(sites: list[dict[str, Any]], topic: str) -> dict[str, Any]:
         "created_at": utc_now(),
         "topic": clean_topic,
         "queries": queries,
+        "coverage_requirements": {
+            "all_queries_require_an_explicit_outcome": True,
+            "reuters_is_mandatory_when_present": any(item.get("site_id") == "reuters" for item in queries),
+            "silent_skip_is_failure": True,
+            "negative_or_restricted_results_are_valid_only_when_recorded": True,
+        },
         "warnings": [
             "Publisher inclusion is inferred from explicit citations in the local transcript corpus, not browsing history.",
             "Do not bypass login, subscription, CAPTCHA or other access controls.",

@@ -11,9 +11,11 @@ from pathlib import Path
 
 from build_evidence_pack import build_pack
 from build_browser_news_source import canonicalize_url, normalize_capture
+from build_news_coverage import build_coverage
 from build_prediction_brief import build_brief
 from build_recommendation import build_recommendation
 from backtest_selector import run_backtest
+from backtest_sector_signal import run_signal_backtest
 from build_a_share_outlook_plan import build_plan as build_a_share_outlook_plan
 from compute_cross_market_signal import _aligned_prior_pairs, compute_signal as compute_cross_market_signal
 from compute_market_mood import compute_market_mood
@@ -32,6 +34,16 @@ from forecast_sector import forecast
 from finalize_prediction_brief import finalize_brief
 from install import ignored_names, install as install_skill_bundle, validate_skill as validate_installed_skill
 from list_browser_news_sites import build_plan, load_registry, select_sites
+from research_journal import (
+    add_review,
+    compare_runs,
+    journal_stats,
+    list_runs,
+    load_reviews,
+    load_run,
+    save_run,
+    verify_archive,
+)
 from select_stocks import rank_candidates
 from validate_evidence import validate_document
 from validate_prediction import validate_prediction_documents
@@ -227,6 +239,8 @@ class NewSourceAdapterTests(unittest.TestCase):
         fact = result["facts"][0]
         self.assertEqual(fact["source_url"], "https://publisher.test/news/item?id=7")
         self.assertEqual(fact["evidence_role"], "browser_observed_original")
+        self.assertTrue(fact["content_observed"])
+        self.assertEqual(fact["observation_scope"], "content_and_metadata")
         self.assertLessEqual(len(fact["excerpt"]), 120)
         self.assertNotIn("visible_text", fact)
         self.assertNotIn("cookies", json.dumps(result))
@@ -246,7 +260,54 @@ class NewSourceAdapterTests(unittest.TestCase):
         self.assertEqual(plan["schema"], "browser.news.search-plan/1")
         self.assertEqual(len(plan["queries"]), 1)
         self.assertEqual(plan["queries"][0]["query"], "site:reuters.com AI 芯片")
+        self.assertTrue(plan["queries"][0]["must_attempt"])
+        self.assertTrue(plan["coverage_requirements"]["silent_skip_is_failure"])
         self.assertNotIn("cookies", json.dumps(plan).lower())
+
+    def test_core_media_coverage_requires_explicit_outcomes(self) -> None:
+        registry = load_registry()
+        plan = build_plan(select_sites(registry, tiers={"core"}), "AI 芯片")
+        capture = {
+            "schema": "browser.news.capture/1",
+            "query": "AI 芯片",
+            "captured_at": "2026-08-08T12:00:00+00:00",
+            "attempts": [
+                {"site_id": "reuters", "outcome": "opened_original"},
+                {"site_id": "bloomberg", "outcome": "paywalled"},
+                {"site_id": "financial-times", "outcome": "no_relevant_result"},
+            ],
+            "pages": [
+                {
+                    "url": "https://www.reuters.com/world/test-story-2026-08-08/",
+                    "title": "Test story",
+                    "publisher": "Reuters",
+                    "published_at": "2026-08-08T10:00:00+00:00",
+                    "observed_at": "2026-08-08T12:00:00+00:00",
+                    "capture_method": "visible_original_page",
+                    "access_state": "open",
+                    "visible_text": "Relevant visible text",
+                }
+            ],
+        }
+        coverage = build_coverage(plan, capture)
+        self.assertTrue(coverage["gate"]["passed"])
+        self.assertTrue(coverage["gate"]["reuters_attempted"])
+        self.assertEqual(coverage["gate"]["opened_original_pages"], 1)
+
+        capture["attempts"] = capture["attempts"][:2]
+        incomplete = build_coverage(plan, capture)
+        self.assertFalse(incomplete["gate"]["passed"])
+        self.assertIn("financial-times", incomplete["gate"]["missing_publishers"])
+
+        capture["pages"] = []
+        capture["attempts"] = [
+            {"site_id": "reuters", "outcome": "search_results_only"},
+            {"site_id": "bloomberg", "outcome": "paywalled"},
+            {"site_id": "financial-times", "outcome": "no_relevant_result"},
+        ]
+        unresolved = build_coverage(plan, capture)
+        self.assertFalse(unresolved["gate"]["passed"])
+        self.assertIn("reuters", unresolved["gate"]["unresolved_publishers"])
 
     def test_gdelt_normalizes_discovery_not_article_truth(self) -> None:
         facts = normalize_articles(
@@ -666,6 +727,14 @@ class ForecastSelectionTests(unittest.TestCase):
         self.assertFalse(publication["valid"])
         self.assertTrue(any("research_required" in error or "publication gate" in error for error in publication["errors"]))
 
+    def test_sector_signal_backtest_abstains_when_score_is_not_calibrated(self) -> None:
+        result = run_signal_backtest(
+            synthetic_history(), "515000", "000300", horizon=20, step=20, cost_bps=10
+        )
+        self.assertEqual(result["schema"], "model.signal-backtest/1")
+        self.assertEqual(result["gate"]["status"], "abstain")
+        self.assertFalse(result["gate"]["positive_score_monotonicity"])
+
     def test_prediction_brief_carries_cross_market_overlay(self) -> None:
         history = synthetic_history()
         sector = forecast(history, "515000", "000300")
@@ -707,7 +776,23 @@ class ForecastSelectionTests(unittest.TestCase):
             for index in range(1, 4)
         ]
         evidence_pack = {"schema": "evidence.pack/1", "topic": "technology", "facts": facts, "signals": [], "warnings": []}
-        brief = build_brief("科技板块", "technology", sector, selection, evidence_pack, backtest)
+        news_coverage = {
+            "schema": "browser.news.coverage/1",
+            "status": "complete",
+            "gate": {"passed": True, "opened_original_pages": 1},
+            "warnings": [],
+        }
+        signal_backtest = {
+            "schema": "model.signal-backtest/1",
+            "current_score": 70,
+            "current_bucket": ">=70",
+            "gate": {"status": "usable"},
+            "warnings": [],
+        }
+        brief = build_brief(
+            "科技板块", "technology", sector, selection, evidence_pack, backtest,
+            news_coverage=news_coverage, signal_backtest=signal_backtest,
+        )
         logic = brief["blogger_logic"]
         for actor in logic["actor_matrix"]:
             actor["goal"] = "扩大可持续收益"
@@ -730,7 +815,9 @@ class ForecastSelectionTests(unittest.TestCase):
             thesis["valuation_verdict"] = "fair"
             thesis["catalyst_status"] = "confirmed"
             thesis["risk_level"] = "medium"
-        finalized = finalize_brief(brief, sector, selection, evidence_pack, backtest)
+        finalized = finalize_brief(
+            brief, sector, selection, evidence_pack, backtest, news_coverage, signal_backtest
+        )
         self.assertTrue(finalized["publication_gate"]["ready"])
         recommendation = build_recommendation(
             sector, selection, backtest, finalized, risk_profile="balanced", personalized=False
@@ -741,6 +828,113 @@ class ForecastSelectionTests(unittest.TestCase):
             sector, selection, backtest, finalized, recommendation, publication=True
         )
         self.assertTrue(report["valid"], report)
+
+
+class ResearchJournalTests(unittest.TestCase):
+    def test_save_search_review_compare_and_verify(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "journal"
+            conclusion_path = root / "recommendation.json"
+            evidence_path = root / "evidence.json"
+            atomic_write_json(conclusion_path, {
+                "schema": "stock.recommendation/1",
+                "method_version": "conditional-recommendation/1.0",
+                "as_of": "2026-08-10",
+                "recommendations": [
+                    {"code": "688001", "action": "观察等待"},
+                    {"code": "688002", "action": "回避"},
+                ],
+                "warnings": ["test warning"],
+            })
+            atomic_write_json(evidence_path, {
+                "schema": "evidence.pack/1",
+                "topic": "半导体",
+                "facts": [{"fact_id": "F001"}],
+                "warnings": [],
+            })
+            run = save_run(
+                archive,
+                topic="半导体未来20日",
+                as_of="2026-08-10",
+                horizon="20d",
+                conclusion=conclusion_path,
+                artifacts=[("evidence-pack", evidence_path)],
+                instruments=["688001", "688002"],
+                tags=["semiconductor", "after-close"],
+                stance="neutral",
+                decision="观察等待",
+                confidence="medium",
+                thesis="产业景气尚未被本地价格确认",
+                review_date="2026-09-07",
+            )
+            repeated = save_run(
+                archive,
+                topic="半导体未来20日",
+                as_of="2026-08-10",
+                horizon="20d",
+                conclusion=conclusion_path,
+                artifacts=[("evidence-pack", evidence_path)],
+                instruments=["688001", "688002"],
+                tags=["semiconductor", "after-close"],
+                stance="neutral",
+                decision="观察等待",
+                confidence="medium",
+                thesis="产业景气尚未被本地价格确认",
+                review_date="2026-09-07",
+            )
+            self.assertEqual(run["run_id"], repeated["run_id"])
+            self.assertEqual(run["artifact_schema_counts"]["stock.recommendation/1"], 1)
+            self.assertEqual(
+                run["conclusion"]["snapshot"]["action_counts"],
+                {"观察等待": 1, "回避": 1},
+            )
+
+            matches = list_runs(archive, query="景气", instrument="688001", tag="semiconductor")
+            self.assertEqual([item["run_id"] for item in matches], [run["run_id"]])
+            review = add_review(
+                archive,
+                run["run_id"],
+                observed_at="2026-09-07",
+                thesis_status="partially_confirmed",
+                realized_return_pct=3.5,
+                benchmark_return_pct=1.0,
+                decision_quality="good",
+                note="产业数据改善但价格确认偏晚",
+            )
+            self.assertEqual(review["excess_return_pct"], 2.5)
+            loaded, path = load_run(archive, run["run_id"])
+            self.assertEqual(loaded["content_fingerprint"], run["content_fingerprint"])
+            self.assertEqual(load_reviews(path)[0]["review_id"], review["review_id"])
+
+            comparison = compare_runs(archive, [run["run_id"]])
+            self.assertEqual(comparison["runs"][0]["latest_review"]["thesis_status"], "partially_confirmed")
+            self.assertEqual(
+                comparison["runs"][0]["artifact_snapshots"]["conclusion"]["schema"],
+                "stock.recommendation/1",
+            )
+            stats = journal_stats(archive, group_by="tag")
+            self.assertEqual(stats["groups"]["semiconductor"]["reviewed_runs"], 1)
+            self.assertEqual(stats["groups"]["semiconductor"]["mean_excess_return_pct"], 2.5)
+            verification = verify_archive(archive)
+            self.assertTrue(verification["valid"], verification["errors"])
+            self.assertEqual(verification["runs"], 1)
+            self.assertEqual(verification["reviews"], 1)
+            tampered = load_json(path)
+            tampered["summary"]["thesis"] = "事后改写"
+            atomic_write_json(path, tampered)
+            self.assertFalse(verify_archive(archive)["valid"])
+
+    def test_rejects_likely_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            secret = root / ".env"
+            secret.write_text("API_KEY=hidden", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "secret"):
+                save_run(
+                    root / "journal", topic="test", as_of="2026-08-10",
+                    horizon="event", conclusion=secret,
+                )
 
 
 if __name__ == "__main__":

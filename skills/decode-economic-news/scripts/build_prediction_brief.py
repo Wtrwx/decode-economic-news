@@ -36,6 +36,8 @@ def build_brief(
     backtest: dict[str, Any] | None = None,
     presets: dict[str, Any] | None = None,
     cross_market: dict[str, Any] | None = None,
+    news_coverage: dict[str, Any] | None = None,
+    signal_backtest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     presets = presets or load_json(DEFAULT_PRESETS)
     preset_config = ((presets.get("presets") or {}).get(preset) or {})
@@ -43,6 +45,11 @@ def build_brief(
     profile = ((presets.get("research_profiles") or {}).get(profile_key) or {})
     candidates = (((selection.get("values") or {}).get("candidates")) or [])
     facts = (evidence_pack or {}).get("facts") or []
+    substantive_facts = [
+        item for item in facts
+        if item.get("evidence_role") not in {"discovery_lead", "publisher_index"}
+        and item.get("observation_scope") != "metadata_only"
+    ]
     warnings = list(forecast.get("warnings") or []) + list(selection.get("warnings") or [])
     if backtest:
         warnings.extend(backtest.get("warnings") or [])
@@ -50,6 +57,10 @@ def build_brief(
         warnings.extend(evidence_pack.get("warnings") or [])
     if cross_market:
         warnings.extend(cross_market.get("warnings") or [])
+    if news_coverage:
+        warnings.extend(news_coverage.get("warnings") or [])
+    if signal_backtest:
+        warnings.extend(signal_backtest.get("warnings") or [])
     actor_rows = [
         {
             "actor": actor,
@@ -115,7 +126,7 @@ def build_brief(
         "status": "research_scaffold_not_publication_ready",
         "blogger_logic": {
             "contradiction": _contradiction(forecast),
-            "verified_fact_ids": [item.get("fact_id") for item in facts if item.get("fact_id")],
+            "verified_fact_ids": [item.get("fact_id") for item in substantive_facts if item.get("fact_id")],
             "actor_matrix": actor_rows,
             "surface_explanation": "research_required",
             "structural_cause": "research_required",
@@ -143,14 +154,28 @@ def build_brief(
                 "transmission_variables": cross_values.get("transmission_variables"),
                 "coverage": (cross_market or {}).get("coverage"),
             },
+            "sector_signal_validation": {
+                "provided": bool(signal_backtest),
+                "current_score": (signal_backtest or {}).get("current_score"),
+                "current_bucket": (signal_backtest or {}).get("current_bucket"),
+                "gate": (signal_backtest or {}).get("gate"),
+            },
+            "news_coverage": {
+                "provided": bool(news_coverage),
+                "status": (news_coverage or {}).get("status"),
+                "gate": (news_coverage or {}).get("gate"),
+            },
         },
         "candidate_theses": candidate_theses,
         "research_questions": research_questions,
         "publication_gate": {
             "has_evidence_pack": bool(evidence_pack),
-            "verified_fact_count": len(facts),
+            "verified_fact_count": len(substantive_facts),
+            "total_fact_count": len(facts),
             "has_walk_forward_backtest": bool(backtest),
             "has_cross_market_overlay": bool(cross_market),
+            "news_coverage_complete": bool(((news_coverage or {}).get("gate") or {}).get("passed")),
+            "sector_signal_usable": ((signal_backtest or {}).get("gate") or {}).get("status") == "usable",
             "all_causal_fields_resolved": False,
             "candidate_verdicts_resolved": False,
             "ready": False,
@@ -172,6 +197,8 @@ def main() -> int:
     parser.add_argument("--evidence-pack", type=Path)
     parser.add_argument("--backtest", type=Path)
     parser.add_argument("--cross-market-signal", type=Path)
+    parser.add_argument("--news-coverage", type=Path)
+    parser.add_argument("--signal-backtest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     forecast = load_json(args.forecast)
@@ -182,8 +209,11 @@ def main() -> int:
     evidence_pack = load_json(args.evidence_pack) if args.evidence_pack else None
     backtest = load_json(args.backtest) if args.backtest else None
     cross_market = load_json(args.cross_market_signal) if args.cross_market_signal else None
+    news_coverage = load_json(args.news_coverage) if args.news_coverage else None
+    signal_backtest = load_json(args.signal_backtest) if args.signal_backtest else None
     result = build_brief(
-        args.topic, args.preset, forecast, selection, evidence_pack, backtest, presets, cross_market
+        args.topic, args.preset, forecast, selection, evidence_pack, backtest, presets, cross_market,
+        news_coverage, signal_backtest,
     )
     result["inputs"] = {
         "forecast_sha256": sha256_file(args.forecast),
@@ -191,6 +221,8 @@ def main() -> int:
         "evidence_pack_sha256": sha256_file(args.evidence_pack) if args.evidence_pack else None,
         "backtest_sha256": sha256_file(args.backtest) if args.backtest else None,
         "cross_market_signal_sha256": sha256_file(args.cross_market_signal) if args.cross_market_signal else None,
+        "news_coverage_sha256": sha256_file(args.news_coverage) if args.news_coverage else None,
+        "signal_backtest_sha256": sha256_file(args.signal_backtest) if args.signal_backtest else None,
     }
     atomic_write_json(args.output, result)
     print(

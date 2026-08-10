@@ -29,8 +29,8 @@ Do not duplicate its Eastmoney, Tonghuashun, Tencent, CNINFO, iwencai, mootdx an
 
 ## Collection order for blogger-style analysis
 
-1. Start with the original official release, filing or registry record.
-2. Use GDELT, portal news or browser search only to discover competing framings and publication timing. Open the original page before upgrading a browser result to an observation.
+1. Route by event origin. Start with the official release for scheduled/statutory events; start with Reuters/Bloomberg/FT for exclusives, rumors, stakeholder reactions or unexplained price moves, then seek official corroboration.
+2. Use GDELT, portal news or browser search to discover both event leads and competing framings. Open the original page before upgrading a browser result to an observation, and record an explicit outcome for every planned core publisher.
 3. Classify event direction and stage: rumor, proposal, draft, announced, approved, effective, enforced or result.
 4. Compare pre-event positioning and 1/3/5-day relative reaction with `compute_news_reaction.py`.
 5. Treat a direction/reaction contradiction as a research question: priced in, implementation doubt, weaker-than-expected detail, hidden constraint or liquidity reversal.

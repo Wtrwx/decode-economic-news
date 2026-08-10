@@ -34,6 +34,8 @@ def finalize_brief(
     selection: dict[str, Any],
     evidence_pack: dict[str, Any],
     backtest: dict[str, Any],
+    news_coverage: dict[str, Any] | None = None,
+    signal_backtest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     result = copy.deepcopy(brief)
     errors: list[str] = []
@@ -44,9 +46,17 @@ def finalize_brief(
     if not evidence_validation["valid"]:
         errors.extend(f"evidence: {item}" for item in evidence_validation["errors"])
     facts = evidence_pack.get("facts") or []
+    substantive_facts = [
+        item for item in facts
+        if item.get("evidence_role") not in {"discovery_lead", "publisher_index"}
+        and item.get("observation_scope") != "metadata_only"
+    ]
     fact_ids = {str(item.get("fact_id")) for item in facts if item.get("fact_id")}
-    if len(facts) < 3:
-        errors.append("at least three verified facts are required")
+    substantive_fact_ids = {
+        str(item.get("fact_id")) for item in substantive_facts if item.get("fact_id")
+    }
+    if len(substantive_facts) < 3:
+        errors.append("at least three substantive facts are required; search results and metadata-only pages do not count")
     if contains_marker(result):
         errors.append("brief still contains research_required fields")
 
@@ -61,6 +71,8 @@ def finalize_brief(
         supporting = {str(item) for item in thesis.get("supporting_fact_ids") or []}
         if not supporting:
             errors.append(f"{code} has no supporting_fact_ids")
+        elif not supporting.intersection(substantive_fact_ids):
+            errors.append(f"{code} is supported only by discovery or metadata-only facts")
         missing = supporting - fact_ids
         if missing:
             errors.append(f"{code} references unknown fact IDs: {sorted(missing)}")
@@ -85,10 +97,41 @@ def finalize_brief(
         errors.append(f"at least 30 candidate observations required: {observations}")
     if costs <= 0:
         errors.append("backtest must include positive transaction costs")
+    metrics = backtest.get("metrics") or {}
+    mean_excess = float(metrics.get("mean_excess_return_pct") or 0)
+    excess_hit = float(metrics.get("excess_hit_rate") or 0)
+    median_net = float(metrics.get("median_net_return_pct") or 0)
+    selector_usable = mean_excess > 0 and excess_hit >= 0.50 and median_net > 0
+    if not selector_usable:
+        errors.append(
+            "stock-selector backtest failed the trade gate: require positive mean excess return, "
+            "at least 50% excess hit rate, and positive median net return"
+        )
+
+    coverage_gate = (news_coverage or {}).get("gate") or {}
+    news_coverage_complete = bool(
+        (news_coverage or {}).get("schema") == "browser.news.coverage/1" and coverage_gate.get("passed")
+    )
+    if not news_coverage_complete:
+        errors.append("core-media coverage is missing or incomplete; Reuters and other planned publishers need explicit outcomes")
+
+    signal_gate = (signal_backtest or {}).get("gate") or {}
+    sector_signal_usable = bool(
+        (signal_backtest or {}).get("schema") == "model.signal-backtest/1"
+        and signal_gate.get("status") == "usable"
+    )
+    if not sector_signal_usable:
+        errors.append("sector signal backtest is missing or requires abstention")
 
     gate = {
         "has_evidence_pack": True,
-        "verified_fact_count": len(facts),
+        "verified_fact_count": len(substantive_facts),
+        "total_fact_count": len(facts),
+        "news_coverage_complete": news_coverage_complete,
+        "news_coverage_status": (news_coverage or {}).get("status") or "missing",
+        "sector_signal_usable": sector_signal_usable,
+        "sector_signal_status": signal_gate.get("status") or "missing",
+        "selector_backtest_usable": selector_usable,
         "has_walk_forward_backtest": True,
         "walk_forward_periods": evaluation_periods,
         "candidate_observations": observations,
@@ -110,6 +153,17 @@ def finalize_brief(
         "backtest_metrics": backtest.get("metrics"),
         "backtest_period": period,
         "backtest_settings": settings,
+        "sector_signal_validation": {
+            "provided": bool(signal_backtest),
+            "current_score": (signal_backtest or {}).get("current_score"),
+            "current_bucket": (signal_backtest or {}).get("current_bucket"),
+            "gate": signal_gate,
+        },
+        "news_coverage": {
+            "provided": bool(news_coverage),
+            "status": (news_coverage or {}).get("status"),
+            "gate": coverage_gate,
+        },
     }
     result["finalization_warnings"] = list(dict.fromkeys(evidence_validation["warnings"] + warnings))
     return result
@@ -122,11 +176,14 @@ def main() -> int:
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--evidence-pack", type=Path, required=True)
     parser.add_argument("--backtest", type=Path, required=True)
+    parser.add_argument("--news-coverage", type=Path, required=True)
+    parser.add_argument("--signal-backtest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     result = finalize_brief(
         load_json(args.brief), load_json(args.forecast), load_json(args.selection),
         load_json(args.evidence_pack), load_json(args.backtest),
+        load_json(args.news_coverage), load_json(args.signal_backtest),
     )
     result["finalization_inputs"] = {
         "brief_sha256": sha256_file(args.brief),
@@ -134,6 +191,8 @@ def main() -> int:
         "selection_sha256": sha256_file(args.selection),
         "evidence_pack_sha256": sha256_file(args.evidence_pack),
         "backtest_sha256": sha256_file(args.backtest),
+        "news_coverage_sha256": sha256_file(args.news_coverage),
+        "signal_backtest_sha256": sha256_file(args.signal_backtest),
     }
     atomic_write_json(args.output, result)
     gate = result["publication_gate"]

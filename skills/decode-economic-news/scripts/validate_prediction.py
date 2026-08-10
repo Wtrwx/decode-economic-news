@@ -93,6 +93,12 @@ def validate_prediction_documents(
                 errors.append("publication gate is not ready")
             if int(gate.get("verified_fact_count") or 0) < 3:
                 errors.append("publication requires at least three verified facts")
+            if not gate.get("news_coverage_complete"):
+                errors.append("publication requires completed core-media coverage")
+            if not gate.get("sector_signal_usable"):
+                errors.append("publication requires a usable sector-signal backtest; otherwise abstain")
+            if not gate.get("selector_backtest_usable"):
+                errors.append("publication requires a usable stock-selector backtest")
             if _contains_marker(brief):
                 errors.append("publication brief still contains research_required fields")
     elif publication:

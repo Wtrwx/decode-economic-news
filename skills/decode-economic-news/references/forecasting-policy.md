@@ -14,6 +14,8 @@ Treat prediction as a dated, testable ranking problem. A valid forecast must con
 
 Never use words such as “必涨”, “确定性”, “稳赚” or “目标价保证”. A 0–100 direction score is not a probability. Only label a value as historical probability when it comes from an out-of-sample score bucket with at least 30 observations; still describe it as a historical rate, not a future guarantee.
 
+Run `backtest_sector_signal.py` before translating a raw score into a directional view. If the report says `abstain` because the score is neutral, the current bucket is sparse, or score/return monotonicity fails, publish the evidence and scenarios without a directional trade. Do not override abstention with narrative confidence.
+
 ## Horizons
 
 - `5d`: short swing. Give more weight to 5/20-day momentum, current trend and 20-day breadth.

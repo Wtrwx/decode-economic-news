@@ -129,6 +129,8 @@ def normalize_capture(capture: dict[str, Any], *, max_excerpt_chars: int = 800) 
             "source_url": url,
             "retrieved_at": observed_at,
             "evidence_role": role,
+            "observation_scope": "content_and_metadata" if visible_text and method == "visible_original_page" else "metadata_only",
+            "content_observed": bool(visible_text and method == "visible_original_page"),
             "title": title,
             "byline": _short_text(page.get("byline"), 300),
             "published_at": published_at or None,

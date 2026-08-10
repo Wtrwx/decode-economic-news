@@ -69,6 +69,15 @@ def validate_document(document: dict) -> dict:
         errors.append("evidence pack missing topic")
     if not facts:
         warnings.append("document contains no verified facts")
+    metadata_only = sum(
+        item.get("evidence_role") in {"discovery_lead", "publisher_index"}
+        or item.get("observation_scope") == "metadata_only"
+        for item in facts if isinstance(item, dict)
+    )
+    if metadata_only:
+        warnings.append(
+            f"document contains {metadata_only} discovery or metadata-only facts; they do not count as substantive support"
+        )
     return {"valid": not errors, "error_count": len(errors), "warning_count": len(warnings), "errors": errors, "warnings": warnings}
 
 

@@ -14,6 +14,7 @@ from build_browser_news_source import canonicalize_url, normalize_capture
 from build_news_coverage import build_coverage
 from build_prediction_brief import build_brief
 from build_recommendation import build_recommendation
+from auto_review_research import build_outcome, load_history_series
 from backtest_selector import run_backtest
 from backtest_sector_signal import run_signal_backtest
 from build_a_share_outlook_plan import build_plan as build_a_share_outlook_plan
@@ -41,6 +42,7 @@ from research_journal import (
     list_runs,
     load_reviews,
     load_run,
+    review_queue,
     save_run,
     verify_archive,
 )
@@ -935,6 +937,106 @@ class ResearchJournalTests(unittest.TestCase):
                     root / "journal", topic="test", as_of="2026-08-10",
                     horizon="event", conclusion=secret,
                 )
+
+    def test_due_queue_reads_conclusion_context(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "journal"
+            conclusion = root / "conclusion.json"
+            atomic_write_json(conclusion, {
+                "schema": "prediction.brief/1",
+                "as_of": "2026-08-10",
+                "status": "research_scaffold_not_publication_ready",
+                "publication_gate": {"ready": False},
+                "warnings": [],
+            })
+            run = save_run(
+                archive, topic="科技ETF未来3日", as_of="2026-08-10", horizon="3d",
+                conclusion=conclusion, instruments=["515000"], stance="abstain",
+                decision="观察等待", review_date="2026-08-14",
+            )
+            queue = review_queue(archive, as_of="2026-08-14")
+            self.assertEqual(queue["counts"], {"due": 1})
+            item = queue["items"][0]
+            self.assertEqual(item["run_id"], run["run_id"])
+            self.assertEqual(item["conclusion"]["snapshot"]["schema"], "prediction.brief/1")
+            self.assertFalse(item["conclusion"]["snapshot"]["gate"]["ready"])
+
+    def test_price_grounded_auto_review_builds_append_only_outcome(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "journal"
+            conclusion = root / "conclusion.json"
+            history = root / "history.json"
+            outcome_path = root / "outcome.json"
+            atomic_write_json(conclusion, {
+                "schema": "stock.recommendation/1", "as_of": "2026-01-01",
+                "recommendations": [{"code": "515000", "action": "条件买入"}], "warnings": [],
+            })
+            run = save_run(
+                archive, topic="科技ETF未来3日", as_of="2026-01-01", horizon="3d",
+                conclusion=conclusion, instruments=["515000"], stance="bullish",
+                decision="条件买入", review_date="2026-01-05",
+            )
+            atomic_write_json(history, {
+                "schema": "market.history/1", "as_of": "2026-01-06", "series": [
+                    {"code": "515000", "name": "科技ETF", "bars": [
+                        {"date": "2026-01-02", "close": 100},
+                        {"date": "2026-01-03", "close": 102},
+                        {"date": "2026-01-04", "close": 104},
+                        {"date": "2026-01-05", "close": 106},
+                    ]},
+                    {"code": "000300", "name": "沪深300", "bars": [
+                        {"date": "2026-01-02", "close": 100},
+                        {"date": "2026-01-03", "close": 101},
+                        {"date": "2026-01-04", "close": 101},
+                        {"date": "2026-01-05", "close": 102},
+                    ]},
+                ], "warnings": [],
+            })
+            queue_item = review_queue(archive, as_of="2026-01-05")["items"][0]
+            outcome = build_outcome(
+                archive, run, queue_item, load_history_series([history]), benchmark_override="000300"
+            )
+            self.assertEqual(outcome["status"], "ready")
+            self.assertEqual(outcome["evaluation"]["thesis_status"], "confirmed")
+            self.assertEqual(outcome["evaluation"]["decision_quality"], "good")
+            self.assertAlmostEqual(outcome["evaluation"]["realized_return_pct"], 6.0)
+            atomic_write_json(outcome_path, outcome)
+            review = add_review(
+                archive, run["run_id"], observed_at=outcome["asset"]["exit_date"],
+                thesis_status=outcome["evaluation"]["thesis_status"],
+                realized_return_pct=outcome["evaluation"]["realized_return_pct"],
+                benchmark_return_pct=outcome["evaluation"]["benchmark_return_pct"],
+                decision_quality=outcome["evaluation"]["decision_quality"],
+                note=outcome["evaluation"]["note"],
+                artifacts=[("auto-review-outcome", outcome_path), ("outcome-history", history)],
+                tags=["automatic-review"],
+            )
+            self.assertTrue(review["review_id"])
+            self.assertEqual(verify_archive(archive)["reviews"], 1)
+
+    def test_auto_review_blocks_when_horizon_bars_are_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "journal"
+            conclusion = root / "conclusion.json"
+            history = root / "history.json"
+            atomic_write_json(conclusion, {"schema": "evidence.signal/1", "as_of": "2026-01-01"})
+            run = save_run(
+                archive, topic="测试", as_of="2026-01-01", horizon="3d",
+                conclusion=conclusion, instruments=["515000"], stance="neutral",
+                review_date="2026-01-05",
+            )
+            atomic_write_json(history, {
+                "schema": "market.history/1", "series": [
+                    {"code": "515000", "bars": [{"date": "2026-01-02", "close": 100}]}
+                ],
+            })
+            item = review_queue(archive, as_of="2026-01-05")["items"][0]
+            outcome = build_outcome(archive, run, item, load_history_series([history]))
+            self.assertEqual(outcome["status"], "blocked")
+            self.assertIn("1/4", outcome["reason"])
 
 
 if __name__ == "__main__":

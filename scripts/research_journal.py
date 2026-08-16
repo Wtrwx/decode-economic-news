@@ -9,7 +9,7 @@ import math
 import os
 import statistics
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -368,6 +368,89 @@ def list_runs(archive: Path, *, limit: int = 50, **filters: str) -> list[dict[st
     return runs[: max(1, limit)]
 
 
+def review_queue(
+    archive: Path,
+    *,
+    as_of: str = "",
+    days_ahead: int = 0,
+    include_reviewed: bool = False,
+    include_unscheduled: bool = False,
+    **filters: str,
+) -> dict[str, Any]:
+    """Return due/overdue research runs with conclusion context attached."""
+    archive = _archive_root(archive)
+    reference_date = date.fromisoformat(_require_date(as_of, "as_of")[:10]) if as_of else date.today()
+    window_end = reference_date + timedelta(days=max(0, days_ahead))
+    items = []
+    for run in list_runs(archive, limit=1_000_000, **filters):
+        _, manifest_path = load_run(archive, str(run["run_id"]))
+        reviews = load_reviews(manifest_path)
+        summary = run.get("summary") or {}
+        raw_review_date = str(summary.get("review_date") or "")
+        if not raw_review_date:
+            if not include_unscheduled:
+                continue
+            status = "unscheduled"
+            review_day = None
+            days_until_review = None
+        else:
+            review_day = date.fromisoformat(_require_date(raw_review_date, "review_date")[:10])
+            reviewed_through = max(
+                (date.fromisoformat(str(item.get("observed_at"))[:10]) for item in reviews if item.get("observed_at")),
+                default=None,
+            )
+            if reviewed_through is not None and reviewed_through >= review_day:
+                status = "reviewed"
+            elif review_day < reference_date:
+                status = "overdue"
+            elif review_day == reference_date:
+                status = "due"
+            elif review_day <= window_end:
+                status = "upcoming"
+            else:
+                continue
+            days_until_review = (review_day - reference_date).days
+        if status == "reviewed" and not include_reviewed:
+            continue
+        conclusion = run.get("conclusion") or {}
+        items.append({
+            "run_id": run.get("run_id"),
+            "topic": run.get("topic"),
+            "as_of": run.get("as_of"),
+            "horizon": run.get("horizon"),
+            "instruments": run.get("instruments") or [],
+            "tags": run.get("tags") or [],
+            "review_date": raw_review_date or None,
+            "days_until_review": days_until_review,
+            "review_status": status,
+            "review_count": len(reviews),
+            "summary": summary,
+            "conclusion": {
+                "source_name": conclusion.get("source_name"),
+                "sha256": conclusion.get("sha256"),
+                "snapshot": conclusion.get("snapshot") or {},
+            },
+            "artifact_snapshots": {
+                str(item.get("role")): item.get("snapshot") or {}
+                for item in run.get("artifacts") or []
+            },
+        })
+    priority = {"overdue": 0, "due": 1, "upcoming": 2, "unscheduled": 3, "reviewed": 4}
+    items.sort(key=lambda item: (
+        priority.get(str(item.get("review_status")), 9),
+        str(item.get("review_date") or "9999-12-31"),
+        str(item.get("run_id") or ""),
+    ))
+    return {
+        "schema": "research.journal-review-queue/1",
+        "created_at": utc_now(),
+        "as_of": reference_date.isoformat(),
+        "days_ahead": max(0, days_ahead),
+        "counts": dict(Counter(str(item["review_status"]) for item in items)),
+        "items": items,
+    }
+
+
 def add_review(
     archive: Path,
     run_id: str,
@@ -662,6 +745,16 @@ def main() -> int:
     review_parser.add_argument("--artifact", action="append", default=[], metavar="ROLE=PATH")
     review_parser.add_argument("--tag", action="append", default=[])
 
+    due_parser = subparsers.add_parser("due", help="list conclusions due for outcome review")
+    _add_archive(due_parser)
+    _add_filters(due_parser)
+    due_parser.add_argument("--as-of", default="")
+    due_parser.add_argument("--days-ahead", type=int, default=0)
+    due_parser.add_argument("--include-reviewed", action="store_true")
+    due_parser.add_argument("--include-unscheduled", action="store_true")
+    due_parser.add_argument("--output", type=Path)
+    due_parser.add_argument("--json", action="store_true")
+
     stats_parser = subparsers.add_parser("stats", help="summarize reviewed outcomes")
     _add_archive(stats_parser)
     _add_filters(stats_parser)
@@ -732,6 +825,26 @@ def main() -> int:
                 note=args.note, artifacts=[parse_artifact_spec(item) for item in args.artifact], tags=args.tag,
             )
             print(result["review_id"])
+            return 0
+        if args.command == "due":
+            result = review_queue(
+                args.archive, as_of=args.as_of, days_ahead=args.days_ahead,
+                include_reviewed=args.include_reviewed,
+                include_unscheduled=args.include_unscheduled,
+                **_filters(args),
+            )
+            if args.output:
+                atomic_write_json(args.output, result)
+            if args.json:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                print("STATUS\tREVIEW_DATE\tRUN_ID\tSTANCE\tDECISION\tTOPIC")
+                for item in result["items"]:
+                    summary = item.get("summary") or {}
+                    print("\t".join(str(value or "") for value in (
+                        item.get("review_status"), item.get("review_date"), item.get("run_id"),
+                        summary.get("stance"), summary.get("decision"), item.get("topic"),
+                    )))
             return 0
         if args.command == "stats":
             result = journal_stats(args.archive, group_by=args.group_by, **_filters(args))

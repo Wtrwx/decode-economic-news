@@ -1,6 +1,6 @@
 ---
 name: decode-economic-news
-description: Research and explain economic, business, industrial-policy, company and capital-market events with reproducible API or browser-assisted news collection, data, sentiment, dynamic news-vs-momentum-vs-overseas priority, U.S./Korean peer read-through, named A-share/ETF outlooks, multi-sector forecasts, walk-forward backtests, stock screening, conditional recommendations, and persistent retrieval/comparison/review of prior research runs. Use for 财经新闻解读、浏览器采集新闻、大A/A股、个股或ETF未来走势、美股韩股联动、跨市场映射、A股行业轮动、科技/半导体/创新药/新能源车/光伏/消费/白酒/金融/券商/军工/有色/煤炭/电力/农业/地产/基建/红利等板块走势、选股、荐股、仓位与止损、股票预测、题材热度、财经口播、历史结论读取、预测复盘、研究记录比较，以及要求采用“反常现象—数据—利益—深层原因—影响”逻辑的任务。
+description: Research and explain economic, business, industrial-policy, company and capital-market events with reproducible API or browser-assisted news collection, data, sentiment, dynamic news-vs-momentum-vs-overseas priority, U.S./Korean peer read-through, named A-share/ETF outlooks, multi-sector forecasts, walk-forward backtests, stock screening, conditional recommendations, and persistent retrieval/comparison/automatic outcome review of prior research runs. Use for 财经新闻解读、浏览器采集新闻、大A/A股、个股或ETF未来走势、美股韩股联动、跨市场映射、A股行业轮动、科技/半导体/创新药/新能源车/光伏/消费/白酒/金融/券商/军工/有色/煤炭/电力/农业/地产/基建/红利等板块走势、选股、荐股、仓位与止损、股票预测、题材热度、财经口播、历史结论读取、到期结论检查、自动复盘、预测后验、研究记录比较，以及要求采用“反常现象—数据—利益—深层原因—影响”逻辑的任务。
 ---
 
 # Decode Economic News
@@ -124,11 +124,13 @@ export DECODE_ECONOMIC_NEWS_ARCHIVE=/absolute/workspace/path/research-journal
 python3 scripts/research_journal.py list --instrument 588080 --limit 10
 python3 scripts/research_journal.py show <run-id>
 python3 scripts/research_journal.py compare <older-run-id> <newer-run-id>
+python3 scripts/research_journal.py due --days-ahead 7
+python3 scripts/auto_review_research.py --history-dir /absolute/workspace/work/runs
 python3 scripts/research_journal.py stats --group-by tag
 python3 scripts/research_journal.py verify
 ```
 
-Keep each original run immutable. Append realized outcomes with `research_journal.py review`; never rewrite the old conclusion after observing the result. Save structured artifacts by role so a later agent can retrieve the exact evidence pack, forecast, backtest, coverage gate or recommendation by hash.
+Keep each original run immutable. Use `research_journal.py due` to read scheduled conclusions and their archived gate snapshots. Use `auto_review_research.py` only with point-in-time price history covering the full horizon; let it append price outcomes and exact history artifacts. If bars, instruments or horizons are insufficient, preserve the blocked report and do not invent a review. Automatic review evaluates returns and gate compliance; manually review causal, fundamental and source-quality claims. Never rewrite the old conclusion after observing the result.
 
 ## Forecasting and Stock Selection
 

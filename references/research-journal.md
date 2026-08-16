@@ -9,8 +9,9 @@ Use the journal to preserve what was known, what was concluded and what happened
 3. Save a completed run
 4. Read and compare runs
 5. Add an outcome review
-6. Measure improvement
-7. Integrity and safety
+6. Automatically review due conclusions
+7. Measure improvement
+8. Integrity and safety
 
 ## 1. Storage model
 
@@ -100,7 +101,40 @@ python3 scripts/research_journal.py review <run-id> \
 
 Use `confirmed`, `partially_confirmed`, `refuted` or `unresolved` for thesis status. Judge decision quality separately from return: a disciplined abstention can be good even when price rises, and a weak process can make money by chance.
 
-## 6. Measure improvement
+## 6. Automatically review due conclusions
+
+Build a read-only queue before fetching prices. The queue includes the original stance, decision, thesis, conclusion snapshot and gate snapshots, so the reviewer does not rely on memory:
+
+```bash
+python3 scripts/research_journal.py due --days-ahead 7
+python3 scripts/research_journal.py due --as-of 2026-09-07 --json \
+  --output work/review-queue.json
+```
+
+Run automatic review with one or more `market.history/1` files, or point it at a directory containing research histories:
+
+```bash
+python3 scripts/auto_review_research.py \
+  --archive /absolute/workspace/research-journal \
+  --history-dir /absolute/workspace/work/runs
+```
+
+Add `--fetch-missing` to request current Tencent forward-adjusted histories for missing six-digit A-share/ETF instruments and inferred market benchmarks. Network fetching is explicit, cached and never required merely to inspect the queue:
+
+```bash
+python3 scripts/auto_review_research.py \
+  --archive /absolute/workspace/research-journal \
+  --history-dir /absolute/workspace/work/runs \
+  --fetch-missing
+```
+
+The automatic reviewer uses the first available close strictly after the conclusion date as entry, then the close N trading sessions after entry for an `Nd` horizon. It records realized return, maximum drawdown, aligned benchmark return and excess return. It archives the deterministic outcome JSON and exact history inputs before appending `research.journal-review/1`.
+
+Price-only automation must not pretend to validate a causal thesis. For `bullish`, `bearish` and `neutral` runs it creates a mechanical price judgment; for `abstain`, `mixed` and `not_applicable` it leaves thesis status `unresolved`. A gate-compliant abstention may receive decision quality `good` even if price later rises. Fundamental mechanism, catalyst timing, evidence quality and rival explanations still require human review.
+
+If the run has no reviewable six-digit instrument, an unsupported horizon, missing history or fewer post-conclusion bars than the horizon, write a blocked batch report and append no review. Use `--dry-run` to generate deterministic outcome files without changing the journal. Reports are saved under `research-journal/reports/auto-review/<date>/` by default.
+
+## 7. Measure improvement
 
 ```bash
 python3 scripts/research_journal.py stats --group-by horizon
@@ -109,7 +143,7 @@ python3 scripts/research_journal.py stats --group-by tag --date-from 2026-01-01
 
 Track review coverage before interpreting performance. Diagnose repeated errors by evidence gap, event-clock branch, source coverage, mapping strength, signal gate, valuation, catalyst timing and invalidation discipline. Change a method only after identifying a recurring error class; record a new `method_version` when semantics change.
 
-## 7. Integrity and safety
+## 8. Integrity and safety
 
 ```bash
 python3 scripts/research_journal.py verify

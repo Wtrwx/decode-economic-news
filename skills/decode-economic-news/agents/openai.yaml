@@ -1,4 +1,0 @@
-interface:
-  display_name: "A股跨市场研究与复盘"
-  short_description: "用事件时钟、核心媒体、走样本门禁和历史复盘分析A股与ETF"
-  default_prompt: "Use $decode-economic-news to research this A-share or ETF question with dated evidence and event-clock gates, check comparable journal runs first, then save the conclusion and review date."

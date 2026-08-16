@@ -20,6 +20,20 @@
 - 板块分数独立走样本检验；样本、单调性或当前分桶不合格时自动 `abstain`
 - API、浏览器和缓存降级的数据采集流程
 
+### 仓库结构
+
+```text
+.
+├── SKILL.md                  # Codex Skill 入口与工作流
+├── agents/openai.yaml        # Codex 界面元数据
+├── references/               # 方法、数据源、门禁与输出规范
+├── scripts/                  # 采集、分析、回测、复盘与安装工具
+├── skill-dependencies.json   # 可机器读取的依赖声明
+└── README.md                 # 使用与安装说明
+```
+
+仓库根目录就是 Skill 根目录，不需要再进入额外的 `skills/decode-economic-news/` 子目录。
+
 ### 强制依赖
 
 本 Skill 依赖 `a-stock-data`，用于A股行情、基本面、资金流、公告、市场情绪和ETF期权数据。
@@ -155,6 +169,20 @@ It reproduces the analytical structure—contradiction, evidence, incentives and
 - Proactive Reuters/Bloomberg/FT radar with explicit per-publisher coverage gates
 - Separate walk-forward validation of sector scores with mandatory `abstain` for sparse, non-monotonic, or neutral signals
 - Reproducible API, browser, cache, and degraded-source workflows
+
+### Repository layout
+
+```text
+.
+├── SKILL.md                  # Codex Skill entry point and workflow
+├── agents/openai.yaml        # Codex interface metadata
+├── references/               # Methods, sources, gates, and output contracts
+├── scripts/                  # Collection, analysis, backtest, review, and install tools
+├── skill-dependencies.json   # Machine-readable dependency declaration
+└── README.md                 # Installation and usage guide
+```
+
+The repository root is the Skill root; no extra `skills/decode-economic-news/` wrapper is required.
 
 ### Required dependency
 

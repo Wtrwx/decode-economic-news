@@ -10,6 +10,7 @@ Grade publisher authority and endpoint stability separately.
 | Official release, filing, XLS/PDF | 0.9–1.0 | 0.6–0.9 | Primary evidence; snapshot raw file |
 | Exchange or statutory disclosure platform | 0.9–1.0 | 0.7–0.9 | Company and market disclosure |
 | Public market portal | 0.5–0.8 | 0.4–0.8 | Real-time/auxiliary data; corroborate |
+| NewsNook API transport | inherit upstream | 0.5–0.8 | Preferred news transport; preserve the upstream publisher, original URL and per-source outcome |
 | Media report | 0.4–0.8 | 0.6–0.9 | Discovery and attributed reporting |
 | Social/anonymous claim | 0.0–0.3 | variable | Lead only; never sole evidence |
 
@@ -31,9 +32,11 @@ Grade publisher authority and endpoint stability separately.
 - Mark cache fallback as `stale`, not `fresh`.
 - Validate schema and minimum row count. An empty list is not automatically valid.
 - Preserve data vintages when the source supports revisions.
+- Use NewsNook `/api/feed/{source_id}` before browser collection for news discovery and publisher-attributed excerpts. Record the API source ID, original URL, raw checksum and an outcome for every selected source. Grade authority by the upstream publisher, never by the proxy alone.
+- NewsNook `/api/page` is an HTTP transport for a selected original page. Raw HTML or JSON still needs source-aware extraction and does not become verified merely because the proxy returned it.
 - Inject proxy credentials through environment variables or a secret manager. Never write proxy URLs with user information to source files, command-line arguments, cache metadata or evidence documents.
 - A proxy changes network routing, not source authority. Do not use it to bypass authentication, paywalls, access controls or publisher terms.
-- Prefer an API or connector for structured official facts. Independently run the browser core-media radar for current international/cross-market outlooks, exclusives, rumors, stakeholder reactions and unexplained price moves; it is complementary evidence, not a fallback. Record explicit negative and access-restricted outcomes.
+- Prefer an API or connector for structured official facts. Use the browser only when the NewsNook/API path fails, returns no relevant result, cannot render the needed lawful page, or the user explicitly requests browser collection. When fallback is triggered, record explicit negative and access-restricted outcomes.
 - Never export cookies, browser storage, passwords, authorization headers or profiles. A browser-visible page proves only what was displayed at capture time.
 
 ## Corroboration

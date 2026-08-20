@@ -16,7 +16,8 @@
 - 科技、半导体、创新药、新能源、消费、金融、军工、周期等多板块预测
 - ETF成份暴露、资金、折溢价和期权定位分析
 - 5日/20日趋势信号、选股、扩展窗口回测和条件荐股
-- Reuters/Bloomberg/FT 主动新闻雷达与逐站覆盖门禁
+- 完成周线定方向、日线定触发的多周期择时，20/55日唐奇安突破、ATR风险尺度、下一交易日执行与资产级回测门禁
+- NewsNook API 优先新闻采集、逐源结果门禁与定向浏览器 fallback
 - 板块分数独立走样本检验；样本、单调性或当前分桶不合格时自动 `abstain`
 - API、浏览器和缓存降级的数据采集流程
 
@@ -33,6 +34,10 @@
 ```
 
 仓库根目录就是 Skill 根目录，不需要再进入额外的 `skills/decode-economic-news/` 子目录。
+
+默认新闻传输使用 [t59688/newsnook](https://github.com/t59688/newsnook) 的公开 API；NewsNook 仅作为读取/代理层，证据仍保留原始媒体、原文链接与逐源结果。
+
+用户提供的“趋势分析实时买卖点工具 v4.0”仅在本地做过静态审计，不随本仓库重新分发。采用与拒绝的算法边界记录在 `references/trend-analysis-v4-reference-audit.md`；参考程序不会被执行，机器许可证不会进入 Skill。
 
 ### 强制依赖
 
@@ -122,10 +127,19 @@ python3 test_pipeline.py
 python3 build_a_share_outlook_plan.py \
   --code 588080 --horizon 20d --session after_close \
   --event-state unknown --output /tmp/588080-plan.json
-python3 list_browser_news_sites.py --tier core --topic '588080 最新事件' \
-  --output /tmp/588080-browser-plan.json
+python3 fetch_newsnook_news.py --preset finance --query '588080 科创50' \
+  --output /tmp/588080-newsnook.json
+python3 build_news_coverage.py --newsnook /tmp/588080-newsnook.json \
+  --output /tmp/588080-news-coverage.json
 python3 backtest_sector_signal.py work/588080-history.json \
   --horizon 20 --output /tmp/588080-signal-backtest.json
+python3 compute_trade_timing.py work/588080-history.json \
+  --asset-code 588080 --benchmark-code 000300 \
+  --output /tmp/588080-trade-timing.json
+python3 backtest_trade_timing.py work/588080-history.json \
+  --asset-code 588080 --benchmark-code 000300 --horizon 20 --start 2022-01-01 \
+  --cost-bps 20 --slippage-bps 10 \
+  --output /tmp/588080-timing-backtest.json
 ```
 
 ### 快速使用
@@ -142,6 +156,7 @@ python3 backtest_sector_signal.py work/588080-history.json \
 - `FRED_API_KEY`：FRED 数据，可选
 - `SEC_USER_AGENT`：SEC EDGAR 请求身份，使用SEC时需要
 - `IWENCAI_API_KEY`：问财语义搜索，可选
+- `NEWSNOOK_API_BASE`：NewsNook API 地址，可选；默认 `https://news.aizeek.com`
 - `GDELT_PROXY_URL`、`CROSS_MARKET_PROXY_URL`：运行时代理，可选
 
 仅通过环境变量或密钥管理器注入敏感信息。不要把密钥、Cookie、代理账号或浏览器配置写进 Skill、README、命令历史或安装报告。
@@ -149,6 +164,8 @@ python3 backtest_sector_signal.py work/588080-history.json \
 ### 数据与投资边界
 
 行情、资金流、新闻情绪、外盘映射和模型分数都是证据或信号，不是收益保证。输出应包含观察日、周期、数据覆盖、比较基准、情景、失效条件和复核日。本项目不执行交易，也不替代适当性评估或持牌投资建议。
+
+技术择时只决定“是否出现可回测的入场结构”，不替代基本面与事件证据。条件买入要求完成周线/日线门禁、下一交易日执行、预先声明评估起点、剔除末端不完整持有期、同标的 timing backtest=`usable`，并按单笔风险预算约束仓位；固定5%止损、相邻刷新价格统计的“准确率”和未经回测的图形标签不会进入推荐门禁。
 
 ---
 
@@ -166,7 +183,8 @@ It reproduces the analytical structure—contradiction, evidence, incentives and
 - Multi-sector forecasts covering technology, semiconductors, innovative drugs, new energy, consumer, finance, defense, and cyclicals
 - ETF exposure, flow, premium/discount, and option-positioning analysis
 - 5-day/20-day trend signals, screening, expanding walk-forward backtests, and gated conditional recommendations
-- Proactive Reuters/Bloomberg/FT radar with explicit per-publisher coverage gates
+- Completed-week/daily multi-timeframe timing with 20/55-day Donchian breakouts, ATR risk references, next-session execution and asset-level timing backtests
+- NewsNook API-first news collection with explicit per-source outcomes and targeted browser fallback
 - Separate walk-forward validation of sector scores with mandatory `abstain` for sparse, non-monotonic, or neutral signals
 - Reproducible API, browser, cache, and degraded-source workflows
 
@@ -183,6 +201,10 @@ It reproduces the analytical structure—contradiction, evidence, incentives and
 ```
 
 The repository root is the Skill root; no extra `skills/decode-economic-news/` wrapper is required.
+
+The default news transport is the public API from [t59688/newsnook](https://github.com/t59688/newsnook). NewsNook is treated only as a reader/proxy layer; evidence preserves the upstream publisher, original URL, and per-source outcome.
+
+The user-supplied Trend Analysis Real-Time Buy/Sell Point Tool v4.0 was audited locally and is not redistributed in this repository. Adopted and rejected ideas are documented in `references/trend-analysis-v4-reference-audit.md`; reference programs are never executed and machine-bound license material is excluded.
 
 ### Required dependency
 
@@ -272,10 +294,19 @@ python3 test_pipeline.py
 python3 build_a_share_outlook_plan.py \
   --code 588080 --horizon 20d --session after_close \
   --event-state unknown --output /tmp/588080-plan.json
-python3 list_browser_news_sites.py --tier core --topic '588080 latest material event' \
-  --output /tmp/588080-browser-plan.json
+python3 fetch_newsnook_news.py --preset finance --query '588080 STAR 50' \
+  --output /tmp/588080-newsnook.json
+python3 build_news_coverage.py --newsnook /tmp/588080-newsnook.json \
+  --output /tmp/588080-news-coverage.json
 python3 backtest_sector_signal.py work/588080-history.json \
   --horizon 20 --output /tmp/588080-signal-backtest.json
+python3 compute_trade_timing.py work/588080-history.json \
+  --asset-code 588080 --benchmark-code 000300 \
+  --output /tmp/588080-trade-timing.json
+python3 backtest_trade_timing.py work/588080-history.json \
+  --asset-code 588080 --benchmark-code 000300 --horizon 20 --start 2022-01-01 \
+  --cost-bps 20 --slippage-bps 10 \
+  --output /tmp/588080-timing-backtest.json
 ```
 
 ### Example prompts
@@ -290,10 +321,11 @@ python3 backtest_sector_signal.py work/588080-history.json \
 - `FRED_API_KEY`: optional FRED access
 - `SEC_USER_AGENT`: required when querying SEC EDGAR
 - `IWENCAI_API_KEY`: optional iWencai semantic search
+- `NEWSNOOK_API_BASE`: optional NewsNook API base; defaults to `https://news.aizeek.com`
 - `GDELT_PROXY_URL`, `CROSS_MARKET_PROXY_URL`: optional runtime-only proxies
 
 Inject secrets only through environment variables or a secret manager. Never store API keys, cookies, authenticated proxy URLs, or browser profiles in the Skill, README, shell history, or installation report.
 
 ### Data and investment boundaries
 
-Prices, fund flows, news sentiment, cross-market mappings, and model scores are evidence or signals—not return guarantees. Published outputs must state the as-of date, horizon, coverage, benchmark, scenarios, invalidation conditions, and review date. This project does not execute trades or replace suitability assessment or licensed financial advice.
+Prices, fund flows, news sentiment, cross-market mappings, and model scores are evidence or signals—not return guarantees. Published outputs must state the as-of date, horizon, coverage, benchmark, scenarios, invalidation conditions, and review date. A usable timing gate also requires a predeclared evaluation start and complete terminal holding horizons. This project does not execute trades or replace suitability assessment or licensed financial advice.

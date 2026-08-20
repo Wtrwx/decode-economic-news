@@ -11,23 +11,26 @@ from pathlib import Path
 
 from build_evidence_pack import build_pack
 from build_browser_news_source import canonicalize_url, normalize_capture
-from build_news_coverage import build_coverage
+from build_news_coverage import build_collection_coverage, build_coverage
 from build_prediction_brief import build_brief
 from build_recommendation import build_recommendation
 from auto_review_research import build_outcome, load_history_series
 from backtest_selector import run_backtest
 from backtest_sector_signal import run_signal_backtest
+from backtest_trade_timing import run_timing_backtest
 from build_a_share_outlook_plan import build_plan as build_a_share_outlook_plan
 from compute_cross_market_signal import _aligned_prior_pairs, compute_signal as compute_cross_market_signal
 from compute_market_mood import compute_market_mood
 from compute_news_reaction import compute_news_reaction
 from compute_text_signals import compute_text_signals
 from compute_topic_heat import compute_topic_heat
+from compute_trade_timing import compute_timing
 from evidence_core import atomic_write_json, load_json, safe_proxy_url, safe_url
 from fetch_price_history import market_prefix, parse_tencent_payload
 from fetch_clinical_trials import normalize_studies
 from fetch_cross_market_history import normalize_proxy_url as normalize_cross_market_proxy, parse_chart, planned_assets
 from fetch_gdelt_news import normalize_articles, normalize_proxy_url
+from fetch_newsnook_news import parse_payload as parse_newsnook_payload, validate_api_base as validate_newsnook_api_base
 from fetch_official_feed import parse_feed
 from fetch_sec_filings import normalize_filings, resolve_ticker
 from fetch_sector_universe import DEFAULT_PRESETS, build_universe
@@ -209,6 +212,102 @@ class TopicHeatTests(unittest.TestCase):
 
 
 class NewSourceAdapterTests(unittest.TestCase):
+    def test_newsnook_eastmoney_api_normalizes_attributed_content(self) -> None:
+        source = {
+            "publisher": "Eastmoney",
+            "parser": "eastmoney-kx",
+            "timezone": "Asia/Shanghai",
+        }
+        payload = (
+            'var ajaxResult={"rc":1,"LivesList":[{'
+            '"newsid":"202608203847620971",'
+            '"title":"创新药ETF上涨",'
+            '"digest":"截至13:35，创新药ETF上涨4.15%。",'
+            '"showtime":"2026-08-20 13:38:24",'
+            '"url_w":"http://finance.eastmoney.com/a/202608203847620971.html"'
+            '}]};'
+        ).encode("utf-8")
+        articles = parse_newsnook_payload(payload, source)
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]["title"], "创新药ETF上涨")
+        self.assertTrue(articles[0]["url"].startswith("https://finance.eastmoney.com/"))
+        self.assertIn("4.15%", articles[0]["summary"])
+
+    def test_newsnook_rejects_html_error_page_for_json_source(self) -> None:
+        source = {"publisher": "Cailian Press", "parser": "cls", "timezone": "UTC"}
+        with self.assertRaises((RuntimeError, json.JSONDecodeError)):
+            parse_newsnook_payload(b"<html>open the app</html>", source)
+
+    def test_newsnook_api_base_rejects_credentials(self) -> None:
+        with self.assertRaises(ValueError):
+            validate_newsnook_api_base("https://user:secret@news.example.test")
+
+    @staticmethod
+    def _newsnook_document(*, sufficient: bool) -> dict:
+        return {
+            "schema": "evidence.source/1",
+            "provider": {"id": "newsnook-api"},
+            "retrieval": {"status": "fresh" if sufficient else "failed"},
+            "collection": {
+                "schema": "newsnook.api.collection/1",
+                "query": "AI 芯片",
+                "attempts": [
+                    {
+                        "source_id": "eastmoney-kx",
+                        "outcome": "success" if sufficient else "failed",
+                    }
+                ],
+                "gate": {
+                    "all_source_outcomes_explicit": True,
+                    "primary_sufficient": sufficient,
+                    "passed": sufficient,
+                    "fallback_reasons": [] if sufficient else ["no relevant API item"],
+                },
+            },
+            "facts": [],
+            "warnings": [],
+        }
+
+    def test_newsnook_primary_coverage_skips_browser_when_sufficient(self) -> None:
+        coverage = build_collection_coverage(self._newsnook_document(sufficient=True))
+        self.assertEqual(coverage["schema"], "news.collection.coverage/2")
+        self.assertTrue(coverage["gate"]["passed"])
+        self.assertFalse(coverage["gate"]["browser_fallback_required"])
+        self.assertFalse(coverage["browser_fallback"]["provided"])
+
+    def test_newsnook_failure_requires_and_accepts_targeted_browser_fallback(self) -> None:
+        registry = load_registry()
+        plan = build_plan(select_sites(registry, publisher="路透"), "AI 芯片")
+        capture = {
+            "schema": "browser.news.capture/1",
+            "query": "AI 芯片",
+            "captured_at": "2026-08-20T12:00:00+00:00",
+            "attempts": [{"site_id": "reuters", "outcome": "opened_original"}],
+            "pages": [
+                {
+                    "url": "https://www.reuters.com/world/test-story-2026-08-20/",
+                    "title": "Test story",
+                    "publisher": "Reuters",
+                    "published_at": "2026-08-20T10:00:00+00:00",
+                    "observed_at": "2026-08-20T12:00:00+00:00",
+                    "capture_method": "visible_original_page",
+                    "access_state": "open",
+                    "visible_text": "Relevant visible text",
+                }
+            ],
+        }
+        missing = build_collection_coverage(self._newsnook_document(sufficient=False))
+        self.assertFalse(missing["gate"]["passed"])
+        self.assertTrue(missing["gate"]["browser_fallback_required"])
+        recovered = build_collection_coverage(
+            self._newsnook_document(sufficient=False),
+            browser_plan=plan,
+            browser_capture=capture,
+        )
+        self.assertTrue(recovered["gate"]["passed"])
+        self.assertTrue(recovered["gate"]["browser_fallback_passed"])
+        self.assertEqual(recovered["status"], "degraded")
+
     def test_browser_capture_normalizes_and_does_not_store_full_text(self) -> None:
         long_text = "Visible article text " * 200
         capture = {
@@ -649,6 +748,37 @@ def synthetic_history() -> dict:
     }
 
 
+def business_bars(rate: float, count: int = 360, volume_rate: float = 0.001) -> list[dict]:
+    current = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    price = 100.0
+    bars = []
+    while len(bars) < count:
+        if current.weekday() < 5:
+            price *= 1.0 + rate
+            index = len(bars)
+            bars.append({
+                "date": current.date().isoformat(),
+                "open": price * 0.998,
+                "close": price,
+                "high": price * 1.0015,
+                "low": price * 0.995,
+                "volume": 1_000_000 * (1.0 + volume_rate * index),
+            })
+        current += timedelta(days=1)
+    return bars
+
+
+def timing_history() -> dict:
+    return {
+        "schema": "market.history/1",
+        "warnings": [],
+        "series": [
+            {"code": "515000", "name": "科技ETF", "bars": business_bars(0.0005)},
+            {"code": "688001", "name": "趋势样本", "bars": business_bars(0.0025)},
+        ],
+    }
+
+
 class PriceHistoryTests(unittest.TestCase):
     def test_tencent_parser_and_index_prefix(self) -> None:
         payload = {
@@ -703,6 +833,37 @@ class SectorPresetTests(unittest.TestCase):
 
 
 class ForecastSelectionTests(unittest.TestCase):
+    def test_multi_timeframe_timing_uses_prior_channel_and_next_session_backtest(self) -> None:
+        history = timing_history()
+        timing = compute_timing(history, ["688001"], "515000")
+        asset = timing["values"]["assets"][0]
+        self.assertIn(asset["state"], {"triggered", "retest"})
+        self.assertTrue(asset["breakout"]["close_breakout_20d"])
+        self.assertLess(asset["breakout"]["prior_20d_high"], asset["timeframes"]["daily"]["close"])
+        diagnostic = run_timing_backtest(
+            history, ["688001"], "515000", horizon=5, cost_bps=10, slippage_bps=5
+        )
+        self.assertEqual(diagnostic["assets"][0]["gate"]["status"], "abstain")
+        self.assertFalse(
+            diagnostic["assets"][0]["gate"]["checks"]["predeclared_evaluation_start_supplied"]
+        )
+        evaluation_start = history["series"][1]["bars"][120]["date"]
+        report = run_timing_backtest(
+            history, ["688001"], "515000", horizon=5, cost_bps=10, slippage_bps=5,
+            start=evaluation_start,
+        )
+        result = report["assets"][0]
+        self.assertGreaterEqual(result["period"]["trades"], 20)
+        self.assertEqual(result["gate"]["status"], "usable")
+        self.assertTrue(all(item["entry_date"] > item["signal_date"] for item in result["trades"]))
+        self.assertTrue(all(item["holding_sessions"] <= 5 for item in result["trades"]))
+        incomplete = run_timing_backtest(
+            history, ["688001"], "515000", horizon=300, cost_bps=10, slippage_bps=5,
+            start=evaluation_start,
+        )["assets"][0]
+        self.assertEqual(incomplete["period"]["trades"], 0)
+        self.assertGreater(incomplete["period"]["skipped_incomplete_horizon"], 0)
+
     def test_sector_forecast_and_selection(self) -> None:
         history = synthetic_history()
         result = forecast(history, "515000", "000300")
@@ -791,6 +952,39 @@ class ForecastSelectionTests(unittest.TestCase):
             "gate": {"status": "usable"},
             "warnings": [],
         }
+        trade_timing = {
+            "schema": "evidence.signal/1",
+            "signal_type": "trade_timing",
+            "values": {
+                "assets": [{
+                    "code": "688001",
+                    "state": "triggered",
+                    "as_of": "2026-08-07",
+                    "coverage": 1.0,
+                    "timeframes": {"daily": {"close": 120.0}},
+                    "risk": {
+                        "technical_stop_reference": 110.4,
+                        "risk_distance_pct": 8.0,
+                        "upside_review_reference_2r": 139.2,
+                        "execution_clock": "signal_at_close_earliest_execution_next_session",
+                    },
+                    "entry_condition": "下一交易日核验价格与流动性后分批",
+                }],
+            },
+        }
+        timing_backtest = {
+            "schema": "model.timing-backtest/1",
+            "settings": {
+                "start": "2022-01-01",
+                "usable_gate_requires_predeclared_start": True,
+                "terminal_incomplete_horizons": "excluded",
+            },
+            "assets": [{
+                "code": "688001",
+                "period": {"trades": 32},
+                "gate": {"status": "usable"},
+            }],
+        }
         brief = build_brief(
             "科技板块", "technology", sector, selection, evidence_pack, backtest,
             news_coverage=news_coverage, signal_backtest=signal_backtest,
@@ -822,10 +1016,12 @@ class ForecastSelectionTests(unittest.TestCase):
         )
         self.assertTrue(finalized["publication_gate"]["ready"])
         recommendation = build_recommendation(
-            sector, selection, backtest, finalized, risk_profile="balanced", personalized=False
+            sector, selection, backtest, finalized, risk_profile="balanced", personalized=False,
+            trade_timing=trade_timing, timing_backtest=timing_backtest,
         )
         self.assertEqual(recommendation["recommendations"][0]["action"], "条件买入")
         self.assertGreater(recommendation["recommendations"][0]["model_position_pct"], 0)
+        self.assertEqual(recommendation["recommendations"][0]["timing_evidence"]["state"], "triggered")
         report = validate_prediction_documents(
             sector, selection, backtest, finalized, recommendation, publication=True
         )

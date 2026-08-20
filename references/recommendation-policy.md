@@ -16,13 +16,17 @@ Ask for risk capacity, horizon, liquidity needs, existing concentration and maxi
 
 Default profiles:
 
-| Profile | Single-name cap | Theme cap | Technical risk band |
-|---|---:|---:|---:|
-| conservative | 3% | 10% | 5–10% |
-| balanced | 5% | 20% | 6–12% |
-| aggressive | 8% | 30% | 8–15% |
+| Profile | Single-name cap | Theme cap | Maximum accepted timing-stop distance | Per-trade risk budget |
+|---|---:|---:|---:|---:|
+| conservative | 3% | 10% | 10% | 0.25% |
+| balanced | 5% | 20% | 12% | 0.50% |
+| aggressive | 8% | 30% | 15% | 0.75% |
+
+The internal 5%/6%/8% `risk_floor_pct` values only bound a volatility fallback shown when point-in-time timing data is absent. They are not minimum buy-gate distances. A valid timing document is mandatory for `条件买入`, and its positive stop distance only needs to stay at or below the profile cap.
 
 Position caps are percentages of investable assets, not instructions to deploy all capital. Do not recommend leverage, margin financing or options unless the user explicitly requests them and the relevant suitability workflow is completed.
+
+Final position is the smallest of the conviction-based allocation, single-name cap, remaining theme cap and `per-trade risk budget / technical stop distance`. Never increase the stop distance to justify a larger position.
 
 ## Recommendation gate
 
@@ -39,17 +43,25 @@ Require all of the following for `条件买入`:
 - `catalyst_status=confirmed|plausible`;
 - `valuation_verdict=attractive|fair`, or `not_meaningful` for loss-making biotech with an explicitly verified pipeline thesis;
 - `risk_level` no higher than `high`.
+- current `trade_timing` state is `triggered|retest` for that exact security;
+- the same security's `model.timing-backtest/1` gate is `usable` with next-session execution, positive costs and slippage;
+- that timing backtest has a predeclared evaluation start and excludes incomplete terminal holding periods;
+- technical stop distance is positive and no wider than the selected profile's risk cap.
 
 Anything weaker becomes `观察等待` or `回避`; do not lower the gate just to produce a pick.
 
 ## Entry and exit
 
-- Avoid chasing when price is more than 8% above MA20; wait for a pullback or breakout retest.
-- When price is near MA20, split the position into two or three entries.
-- When price is below MA20, require a reclaim with volume confirmation.
-- Derive a technical risk reference from recent volatility, capped by the risk-profile band. Combine it with MA60 where available.
+- Read `technical-timing-workflow.md` and generate the asset-level timing documents before naming an entry.
+- Freeze a signal at the close and state that the earliest modeled execution is the next session; never imply same-bar fills.
+- Avoid chasing when `state=extended` or price is more than 8% above MA20; wait for a pullback, consolidation or independently confirmed retest.
+- When `state=triggered|retest`, split the allowed risk-budget position into two or three entries only if live liquidity and price still satisfy the trigger.
+- When price is below MA20 or the high-timeframe state is bearish, require a new completed setup rather than merely a one-day reclaim.
+- Use the timing report's ATR/prior-channel stop reference. The risk profile caps acceptable stop distance and position; it does not manufacture a universal stop.
 - Treat an upside level as a review point, not a guaranteed target price.
 - Exit or reassess when the stated fundamental invalidation occurs, the catalyst fails, disclosure contradicts the thesis, or the 20-day sector regime falls below the defined threshold.
+
+Do not report a local-storage refresh comparison, a fixed-weight score, or an in-sample chart pattern rate as “accuracy”. Only publish a historical rate from a dated, non-overlapping, point-in-time sample with the stated horizon, benchmark, costs and minimum sample.
 
 ## Required final format
 
@@ -57,6 +69,7 @@ Anything weaker becomes `观察等待` or `回避`; do not lower the gate just t
 Risk profile / whether personalized:
 As-of date / horizon:
 Sector view:
+Timing state / asset-specific timing backtest:
 Conditional buys:
   code, name, thesis, entry condition, position cap, stop/review reference,
   catalyst, invalidation, supporting fact IDs

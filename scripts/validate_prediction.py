@@ -94,7 +94,7 @@ def validate_prediction_documents(
             if int(gate.get("verified_fact_count") or 0) < 3:
                 errors.append("publication requires at least three verified facts")
             if not gate.get("news_coverage_complete"):
-                errors.append("publication requires completed core-media coverage")
+                errors.append("publication requires completed NewsNook-first coverage and any required browser fallback")
             if not gate.get("sector_signal_usable"):
                 errors.append("publication requires a usable sector-signal backtest; otherwise abstain")
             if not gate.get("selector_backtest_usable"):
@@ -110,10 +110,13 @@ def validate_prediction_documents(
         suitability = recommendation.get("suitability") or {}
         single_cap = float(suitability.get("single_cap_pct") or 0)
         theme_cap = float(suitability.get("theme_cap_pct") or 0)
+        risk_budget = float(suitability.get("risk_budget_pct") or 0)
         if suitability.get("risk_profile") not in {"conservative", "balanced", "aggressive"}:
             errors.append("recommendation has an invalid risk profile")
         if suitability.get("status") not in {"user_supplied", "non_personalized_default"}:
             errors.append("recommendation must disclose personalization status")
+        if risk_budget <= 0:
+            errors.append("recommendation must disclose a positive per-trade risk budget")
         recs = recommendation.get("recommendations") or []
         rec_codes = [str(item.get("code") or "") for item in recs]
         if not recs or len(rec_codes) != len(set(rec_codes)):
@@ -136,6 +139,13 @@ def validate_prediction_documents(
                 plan = item.get("trade_plan") or {}
                 if not plan.get("entry_condition") or not plan.get("technical_stop_reference"):
                     errors.append(f"conditional buy lacks entry/stop controls for {item.get('code')}")
+                timing = item.get("timing_evidence") or {}
+                if timing.get("state") not in {"triggered", "retest"}:
+                    errors.append(f"conditional buy lacks a triggered/retest timing state for {item.get('code')}")
+                if timing.get("timing_backtest_gate") != "usable":
+                    errors.append(f"conditional buy lacks a usable timing backtest for {item.get('code')}")
+                if plan.get("execution_clock") != "signal_at_close_earliest_execution_next_session":
+                    errors.append(f"conditional buy lacks a next-session execution clock for {item.get('code')}")
             elif position != 0:
                 errors.append(f"non-buy action has a non-zero position for {item.get('code')}")
         controls = recommendation.get("portfolio_controls") or {}

@@ -1,4 +1,4 @@
 interface:
-  display_name: "A股跨市场研究与自动复盘"
-  short_description: "用事件时钟、门禁和到期行情自动复盘A股与ETF"
-  default_prompt: "Use $decode-economic-news to research this A-share or ETF question, check prior runs, save a dated conclusion, and automatically review due outcomes with verified price history."
+  display_name: "A股NewsNook研究与自动复盘"
+  short_description: "NewsNook优先、择时门禁与到期自动复盘A股和ETF"
+  default_prompt: "Use $decode-economic-news to collect news through NewsNook API first, use browser fallback only when required, apply timing and publication gates, check prior runs, and save a dated conclusion for automatic outcome review."

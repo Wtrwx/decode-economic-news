@@ -18,6 +18,7 @@ VALID_VERDICTS = {
     "catalyst_status": {"confirmed", "plausible", "absent"},
     "risk_level": {"medium", "high", "very_high"},
 }
+VALID_NEWS_COVERAGE_SCHEMAS = {"news.collection.coverage/2", "browser.news.coverage/1"}
 
 
 def contains_marker(value: Any, marker: str = "research_required") -> bool:
@@ -110,10 +111,12 @@ def finalize_brief(
 
     coverage_gate = (news_coverage or {}).get("gate") or {}
     news_coverage_complete = bool(
-        (news_coverage or {}).get("schema") == "browser.news.coverage/1" and coverage_gate.get("passed")
+        (news_coverage or {}).get("schema") in VALID_NEWS_COVERAGE_SCHEMAS and coverage_gate.get("passed")
     )
     if not news_coverage_complete:
-        errors.append("core-media coverage is missing or incomplete; Reuters and other planned publishers need explicit outcomes")
+        errors.append(
+            "news coverage is missing or incomplete; NewsNook source attempts must be explicit and any required browser fallback must pass"
+        )
 
     signal_gate = (signal_backtest or {}).get("gate") or {}
     sector_signal_usable = bool(

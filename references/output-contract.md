@@ -26,9 +26,13 @@ Every collector returns `evidence.source/1`:
 
 Each fact requires `fact_id`, `claim`, `publisher`, `source_url`, `retrieved_at` and `period`. Numeric facts also require `value` and `unit`. Add `vintage` when revisions matter.
 
-Browser collection first uses `browser.news.capture/1` as documented in [browser-news-workflow.md](browser-news-workflow.md). `build_browser_news_source.py` converts it to `evidence.source/1`, removes tracking parameters, distinguishes discovery results from opened original pages, truncates excerpts and excludes browser session data.
+Primary news collection uses `fetch_newsnook_news.py`, which returns `evidence.source/1` plus `collection.schema=newsnook.api.collection/1`. The collection block records the NewsNook API base, reviewed source-registry commit, selected source IDs, query, parser, raw checksum, item counts and an explicit success/failure outcome for every source. Facts preserve the upstream publisher and original URL; `retrieved_via` identifies the NewsNook endpoint.
 
-`build_news_coverage.py` combines `browser.news.search-plan/1` and `browser.news.capture/1` into `browser.news.coverage/1`. Its gate fails when a required publisher was silently skipped or failed. A recorded no-result, paywall or login restriction is an accounted outcome; it does not become substantive evidence.
+`api_observed_news_item` means the API response included a usable attributed excerpt. Google News remains `discovery_lead`; an item with no excerpt is `publisher_index` and metadata-only.
+
+Browser fallback uses `browser.news.capture/1` as documented in [browser-news-workflow.md](browser-news-workflow.md). `build_browser_news_source.py` converts it to `evidence.source/1`, removes tracking parameters, distinguishes discovery results from opened original pages, truncates excerpts and excludes browser session data.
+
+`build_news_coverage.py --newsnook ...` returns `news.collection.coverage/2`. It passes without browser input when the NewsNook primary gate is sufficient. If the API gate fails or a fallback reason is supplied, the browser plan/capture becomes mandatory and must pass its explicit publisher gate. Browser-only `browser.news.coverage/1` remains accepted for backward compatibility, but new workflows should use version 2.
 
 ## Signal document
 
@@ -69,6 +73,14 @@ Sector forecasts and stock selections remain compatible with `evidence.signal/1`
 
 `model.signal-backtest/1` tests the sector score itself. Its gate is `usable` only when the total sample is adequate, score-to-excess-return monotonicity is positive, and the current score bucket supports the claimed direction. Otherwise the mandatory status is `abstain`.
 
+## Trade timing
+
+`compute_trade_timing.py` returns `evidence.signal/1` with `signal_type=trade_timing`. `values.assets` contains an explicit outcome for every requested code, completed-week and daily trend states, prior-bar 20/55-day Donchian levels, volume/OBV confirmation, relative strength, ATR/channel risk references, an execution clock and an entry state. The Donchian decision threshold must exclude the decision bar. Missing observations remain null and missing series use an explicit `missing_series` state.
+
+`backtest_trade_timing.py` returns `model.timing-backtest/1`. Each asset has its own trades, metrics and `usable|abstain` gate. The method freezes a signal at the close, enters no earlier than the next session open, prevents overlapping trades per asset, checks gap/intraday stops and deducts configured costs and slippage. A `usable` gate requires a predeclared `settings.start`; signals without a complete configured holding horizon at the data boundary are excluded and recorded in `period.skipped_incomplete_horizon`. `settings.terminal_incomplete_horizons` must be `excluded`. Preserve warnings for limit-lock execution, point-in-time constituents and corporate-action conventions.
+
+Timing states are entry overlays, not probabilities. A `triggered` or `retest` state may feed a conditional recommendation only when the same asset's timing-backtest gate is `usable`, its evaluation window is predeclared and complete, and its risk distance fits the selected suitability profile.
+
 ## Recommendation
 
 `build_recommendation.py` returns `stock.recommendation/1` with:
@@ -79,20 +91,6 @@ Sector forecasts and stock selections remain compatible with `evidence.signal/1`
 - `portfolio_controls`: total recommended theme exposure and review triggers;
 - `warnings`: model, data, backtest and suitability limitations.
 
+Version `conditional-recommendation/2.0` also requires asset-level `timing_evidence`, a positive per-trade `risk_budget_pct`, a next-session execution clock and risk-budget position sizing for every `条件买入`.
+
 Only a finalized `prediction.brief/1` may feed this output. Preserve all upstream hashes.
-
-## Research journal
-
-`research_journal.py save` creates an immutable `research.journal-run/1` manifest. Preserve:
-
-- topic, observation date, horizon, instruments and tags;
-- stance, decision, confidence, thesis and planned review date;
-- the conclusion artifact and every material upstream artifact by role;
-- artifact schema, method version, selected gate/metric snapshots, byte size and SHA-256;
-- a content fingerprint that makes identical saves idempotent.
-
-Store artifact bytes once under a content-addressed `objects/` path. Do not depend on their original working paths after saving.
-
-`research_journal.py review` adds `research.journal-review/1` without modifying the run manifest. Record observation date, thesis status, realized and benchmark returns, decision quality, notes and supporting outcome artifacts. Keep thesis correctness separate from decision quality and realized return.
-
-Use `list`, `show` and `compare` to retrieve dated conclusions; use `stats` only after checking review coverage. Run `verify` before migration or aggregate analysis.

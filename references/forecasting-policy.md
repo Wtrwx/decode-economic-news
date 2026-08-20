@@ -22,6 +22,19 @@ Run `backtest_sector_signal.py` before translating a raw score into a directiona
 - `20d`: medium swing. Give more weight to 20/60-day momentum, relative strength and 60-day breadth.
 - Do not extrapolate these signals into a 6–12 month fundamental thesis.
 
+## Multi-timeframe timing overlay
+
+Read `technical-timing-workflow.md` for any named A-share/ETF 5d/20d entry question, real-time buy/sell-point request, or conditional recommendation.
+
+- Use completed weekly bars to define the higher-timeframe regime and daily bars to define the trigger. Keep an unfinished week provisional and separate.
+- Compute 20/55-day Donchian thresholds from bars strictly before the decision bar. A signal observed at the close can execute no earlier than the next session.
+- Use ATR, the prior 10-day channel, relative strength, volume and OBV as transparent timing/risk features. Volume or OBV confirms a setup but never replaces event, disclosure or fundamental evidence.
+- Treat `triggered|retest` as eligible timing states only after the same asset and exact timing rule pass `model.timing-backtest/1`.
+- `watch`, `triggered_unconfirmed`, `extended`, `trend_only`, `mixed`, `blocked`, sparse data or a timing-backtest `abstain` cannot produce `条件买入`.
+- Do not mechanically add the timing state to the sector direction score. Direction/ranking and entry timing answer different questions and require separate validation.
+
+The reference package audited in `trend-analysis-v4-reference-audit.md` inspired the weekly/daily, Donchian and ATR structure. Do not import its fixed five-module weights, universal fixed 5% stop/position rule, price-proxy CAN SLIM, pattern targets, substring vetoes or adjacent-refresh "accuracy" statistic. A fixed 5% stop may be retained only as a named backtest ablation; do not assume the current dynamic stop is superior without same-rule point-in-time evidence.
+
 ## Named A-share and ETF outlook order
 
 Read `a-share-outlook-workflow.md` and run `build_a_share_outlook_plan.py` before analyzing a named A-share or ETF. Do not use one fixed order for news, overseas markets and momentum.
@@ -46,6 +59,11 @@ Warn about:
 - delistings, suspensions and limit-up/limit-down execution constraints;
 - endpoint gaps, stale cache and low coverage;
 - multiple testing when many themes, horizons or weights were tried.
+- same-bar execution or using the decision bar inside its own breakout threshold;
+- overlapping timing observations that count one trend repeatedly;
+- unfinished weekly bars silently treated as final.
+- an all-history timing gate with no predeclared evaluation start, which can hide recent regime decay;
+- terminal signals settled before their full configured holding horizon exists.
 
 ## Cross-market overlay for A-shares
 
@@ -76,6 +94,8 @@ MA20/MA60 trend structure            15%
 ```
 
 Exclude securities with insufficient history, non-positive prices, or names containing ST/退 by default. Do not use portal “main force” labels as a substitute for price, disclosure or fundamental evidence.
+
+The selector ranks candidates; it does not choose an entry. After ranking, run `compute_trade_timing.py` and `backtest_trade_timing.py` for every candidate that may appear as a conditional buy. Use a long history, freeze `--start` before viewing outcomes, and exclude incomplete terminal horizons. Pattern, Chan-theory, MACD, RSI, KDJ or other chart labels remain exploratory unless the exact rule has an independent point-in-time backtest. Pooled evidence from the v4 audit does not substitute for the same-asset gate.
 
 ## Sector-specific review
 
@@ -132,6 +152,7 @@ Trend score and coverage:
 Leading factors:
 Candidate ranking:
 Walk-forward evidence:
+Timing state / timing walk-forward gate:
 Fundamental/catalyst checks still required:
 Downside scenario:
 Invalidation signals:

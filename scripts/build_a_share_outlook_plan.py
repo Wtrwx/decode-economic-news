@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import shlex
 from pathlib import Path
 from typing import Any
 
@@ -77,8 +78,8 @@ def event_clock_stage() -> dict[str, Any]:
         "P1_blocking",
         "用快速扫描决定新闻原稿与本地价格状态谁先进入P2。",
         [
-            "扫描24小时、7日和30日三层事件窗口；短窗找触发，长窗找仍在定价的持续变量。",
-            "官方披露、监管发布和指数调整之外，主动检查Reuters、Bloomberg、Financial Times；每家必须记录已打开、无相关结果、受限或失败，不得静默跳过。",
+            "先通过NewsNook API扫描24小时、7日和30日三层事件窗口；短窗找触发，长窗找仍在定价的持续变量。",
+            "NewsNook所选源必须逐一记录成功、无匹配或失败；API门禁失败、无相关结果或原文无法核验时，再对缺口执行定向浏览器fallback。",
             "区分传闻、提案、正式发布、批准、生效和结果；记录首次公开时间。",
             "仅当原始来源可打开、共享变量明确且可能在预测期改变现金流或折现率时，标记confirmed_material。",
         ],
@@ -111,7 +112,7 @@ def news_stage(*, verification_first: bool = False) -> dict[str, Any]:
         purpose,
         [
             "按事件来源决定顺序：正式公告先开交易所/公司/监管原稿；独家报道或异常价格先开核心媒体原文，再回查官方确认。",
-            "用Reuters找突发、独家与实地证据，用Bloomberg找市场预期与定价，用Financial Times找结构约束和竞争解释。",
+            "优先用NewsNook API取得快讯、媒体feed和原始链接；API失败、无结果、页面仅JS可见或需要合法登录态时，才使用浏览器补缺。",
             "提取谁作出什么决定、何时生效、规模多大、影响订单/价格/成本/现金流还是折现率。",
             "写出共同解释及其局限，并提出至少一个竞争解释或反事实。",
         ],
@@ -203,8 +204,13 @@ def build_order(
 def command_templates(instrument: dict[str, Any], horizon: str) -> list[str]:
     code = instrument["code"]
     market_code = str((instrument.get("market_benchmark") or {}).get("code") or "000300")
+    news_query = " ".join(
+        str(item).strip() for item in (code, instrument.get("short_name"), instrument.get("name")) if str(item or "").strip()
+    )
+    quoted_news_query = shlex.quote(news_query)
     commands = [
-        f"python3 scripts/list_browser_news_sites.py --tier core --topic '{code} latest material event' --output work/{code}-browser-search-plan.json",
+        f"python3 scripts/fetch_newsnook_news.py --preset finance --query {quoted_news_query} --output work/{code}-newsnook-news.json",
+        f"python3 scripts/build_news_coverage.py --newsnook work/{code}-newsnook-news.json --output work/{code}-news-coverage.json",
         f"python3 scripts/fetch_price_history.py --code {code} --code {market_code} --days 360 --output work/{code}-history-preliminary.json",
         f"python3 scripts/forecast_sector.py work/{code}-history-preliminary.json --benchmark {code} --market-benchmark {market_code} --output work/{code}-trend.json",
         "python3 scripts/fetch_a_share_sentiment.py --output work/a-share-snapshot.json",
@@ -218,7 +224,8 @@ def command_templates(instrument: dict[str, Any], horizon: str) -> list[str]:
         f"# Replace preliminary history with a current constituent universe before publishing a {horizon} breadth-based forecast."
     )
     commands.extend([
-        f"# After browser capture: python3 scripts/build_news_coverage.py --plan work/{code}-browser-search-plan.json --capture work/{code}-browser-capture.json --output work/{code}-news-coverage.json",
+        f"# If the NewsNook gate fails: python3 scripts/list_browser_news_sites.py --tier core --topic {quoted_news_query} --output work/{code}-browser-search-plan.json",
+        f"# After fallback capture: python3 scripts/build_news_coverage.py --newsnook work/{code}-newsnook-news.json --plan work/{code}-browser-search-plan.json --capture work/{code}-browser-capture.json --output work/{code}-news-coverage.json",
         f"# After replacing the preliminary series with dated constituents: python3 scripts/backtest_sector_signal.py work/{code}-history-point-in-time.json --benchmark {code} --market-benchmark {market_code} --horizon {horizon.removesuffix('d') if horizon.endswith('d') and horizon in ('5d', '20d') else 20} --output work/{code}-signal-backtest.json",
     ])
     return commands
@@ -249,7 +256,7 @@ def build_plan(
         "publication_requirements": [
             "标明观察日、预测周期、成份/持仓日期和比较基准",
             "原始来源支持核心事件与传导链",
-            "Reuters/Bloomberg/Financial Times核心媒体扫描均有明确结果，news coverage门禁通过",
+            "NewsNook API所选源均有明确结果；仅在门禁触发时完成浏览器fallback，news coverage门禁通过",
             "板块分数的独立走样本门禁为usable；否则必须abstain",
             "外盘使用严格更早收盘并剔除本国宽基共同因子",
             "ETF外盘映射按实时暴露选择；缺少权重时不合成",

@@ -1,0 +1,349 @@
+{
+  "schema": "newsnook.api.sources/1",
+  "api_base": "https://news.aizeek.com",
+  "repository": "https://github.com/t59688/newsnook",
+  "registry_as_of": "2026-08-20",
+  "registry_commit": "84a6493ac3d05fe4bfba6489f5a20fb42f860bc5",
+  "presets": {
+    "finance": [
+      "eastmoney-kx",
+      "eastmoney-news",
+      "wscn-live",
+      "netease-stock",
+      "netease-biz",
+      "bbc-business",
+      "scmp-china"
+    ],
+    "china-finance": [
+      "eastmoney-kx",
+      "eastmoney-news",
+      "wscn-live",
+      "netease-stock",
+      "netease-biz",
+      "kr36",
+      "huxiu",
+      "tmtpost"
+    ],
+    "international-business": [
+      "bbc-business",
+      "gnews-business",
+      "scmp-china",
+      "dw-top",
+      "npr",
+      "guardian-world",
+      "france24",
+      "aljazeera"
+    ],
+    "technology": [
+      "netease-tech",
+      "sspai",
+      "ifanr",
+      "kr36",
+      "ithome",
+      "huxiu",
+      "geekpark",
+      "arstechnica",
+      "mittr",
+      "wired"
+    ],
+    "ai": [
+      "qbitai",
+      "openai-news",
+      "google-ai",
+      "deepmind",
+      "huggingface",
+      "pytorch",
+      "mittr-ai"
+    ]
+  },
+  "sources": {
+    "eastmoney-kx": {
+      "publisher": "Eastmoney",
+      "parser": "eastmoney-kx",
+      "group": "cn",
+      "role": "china_market_breaking_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.62,
+      "endpoint_stability": 0.65
+    },
+    "eastmoney-news": {
+      "publisher": "Eastmoney",
+      "parser": "eastmoney-news",
+      "group": "cn",
+      "role": "china_financial_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.62,
+      "endpoint_stability": 0.62
+    },
+    "wscn-live": {
+      "publisher": "Wallstreetcn",
+      "parser": "wscn-live",
+      "group": "cn",
+      "role": "global_market_breaking_news",
+      "timezone": "UTC",
+      "authority_score": 0.58,
+      "endpoint_stability": 0.68
+    },
+    "cls-telegraph": {
+      "publisher": "Cailian Press",
+      "parser": "cls",
+      "group": "cn",
+      "role": "china_market_breaking_news",
+      "timezone": "UTC",
+      "authority_score": 0.68,
+      "endpoint_stability": 0.55
+    },
+    "netease-stock": {
+      "publisher": "NetEase Finance",
+      "parser": "netease",
+      "group": "cn",
+      "role": "china_equity_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.68
+    },
+    "netease-biz": {
+      "publisher": "NetEase Finance",
+      "parser": "netease",
+      "group": "cn",
+      "role": "china_business_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.68
+    },
+    "netease-tech": {
+      "publisher": "NetEase Technology",
+      "parser": "netease",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.68
+    },
+    "bbc-business": {
+      "publisher": "BBC News",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_business_news",
+      "timezone": "UTC",
+      "authority_score": 0.75,
+      "endpoint_stability": 0.88
+    },
+    "gnews-business": {
+      "publisher": "Google News",
+      "parser": "google-news",
+      "group": "intl",
+      "role": "international_news_discovery",
+      "timezone": "UTC",
+      "authority_score": 0.45,
+      "endpoint_stability": 0.65
+    },
+    "scmp-china": {
+      "publisher": "South China Morning Post",
+      "parser": "feed",
+      "group": "intl",
+      "role": "china_international_news",
+      "timezone": "UTC",
+      "authority_score": 0.72,
+      "endpoint_stability": 0.75
+    },
+    "dw-top": {
+      "publisher": "Deutsche Welle",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_news",
+      "timezone": "UTC",
+      "authority_score": 0.72,
+      "endpoint_stability": 0.82
+    },
+    "npr": {
+      "publisher": "NPR",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_news",
+      "timezone": "UTC",
+      "authority_score": 0.74,
+      "endpoint_stability": 0.86
+    },
+    "guardian-world": {
+      "publisher": "The Guardian",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_news",
+      "timezone": "UTC",
+      "authority_score": 0.72,
+      "endpoint_stability": 0.82
+    },
+    "france24": {
+      "publisher": "France 24",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_news",
+      "timezone": "UTC",
+      "authority_score": 0.72,
+      "endpoint_stability": 0.78
+    },
+    "aljazeera": {
+      "publisher": "Al Jazeera",
+      "parser": "feed",
+      "group": "intl",
+      "role": "international_news",
+      "timezone": "UTC",
+      "authority_score": 0.72,
+      "endpoint_stability": 0.78
+    },
+    "kr36": {
+      "publisher": "36Kr",
+      "parser": "feed",
+      "group": "cn",
+      "role": "china_business_and_technology",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.58,
+      "endpoint_stability": 0.72
+    },
+    "huxiu": {
+      "publisher": "Huxiu",
+      "parser": "feed",
+      "group": "cn",
+      "role": "china_business_commentary",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.72
+    },
+    "tmtpost": {
+      "publisher": "TMTPost",
+      "parser": "feed",
+      "group": "cn",
+      "role": "china_business_and_technology",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.58,
+      "endpoint_stability": 0.72
+    },
+    "sspai": {
+      "publisher": "Sspai",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.78
+    },
+    "ifanr": {
+      "publisher": "iFanr",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.75
+    },
+    "ithome": {
+      "publisher": "IT Home",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.55,
+      "endpoint_stability": 0.82
+    },
+    "geekpark": {
+      "publisher": "GeekPark",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.58,
+      "endpoint_stability": 0.75
+    },
+    "arstechnica": {
+      "publisher": "Ars Technica",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "UTC",
+      "authority_score": 0.70,
+      "endpoint_stability": 0.85
+    },
+    "mittr": {
+      "publisher": "MIT Technology Review",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_analysis",
+      "timezone": "UTC",
+      "authority_score": 0.75,
+      "endpoint_stability": 0.82
+    },
+    "wired": {
+      "publisher": "WIRED",
+      "parser": "feed",
+      "group": "tech",
+      "role": "technology_news",
+      "timezone": "UTC",
+      "authority_score": 0.70,
+      "endpoint_stability": 0.78
+    },
+    "qbitai": {
+      "publisher": "QbitAI",
+      "parser": "feed",
+      "group": "ai",
+      "role": "china_ai_news",
+      "timezone": "Asia/Shanghai",
+      "authority_score": 0.58,
+      "endpoint_stability": 0.72
+    },
+    "openai-news": {
+      "publisher": "OpenAI",
+      "parser": "feed",
+      "group": "ai",
+      "role": "company_primary_news",
+      "timezone": "UTC",
+      "authority_score": 0.90,
+      "endpoint_stability": 0.85
+    },
+    "google-ai": {
+      "publisher": "Google",
+      "parser": "feed",
+      "group": "ai",
+      "role": "company_primary_news",
+      "timezone": "UTC",
+      "authority_score": 0.90,
+      "endpoint_stability": 0.85
+    },
+    "deepmind": {
+      "publisher": "Google DeepMind",
+      "parser": "feed",
+      "group": "ai",
+      "role": "company_primary_news",
+      "timezone": "UTC",
+      "authority_score": 0.90,
+      "endpoint_stability": 0.85
+    },
+    "huggingface": {
+      "publisher": "Hugging Face",
+      "parser": "feed",
+      "group": "ai",
+      "role": "company_primary_news",
+      "timezone": "UTC",
+      "authority_score": 0.82,
+      "endpoint_stability": 0.82
+    },
+    "pytorch": {
+      "publisher": "PyTorch",
+      "parser": "feed",
+      "group": "ai",
+      "role": "project_primary_news",
+      "timezone": "UTC",
+      "authority_score": 0.85,
+      "endpoint_stability": 0.82
+    },
+    "mittr-ai": {
+      "publisher": "MIT Technology Review",
+      "parser": "feed",
+      "group": "ai",
+      "role": "ai_analysis",
+      "timezone": "UTC",
+      "authority_score": 0.75,
+      "endpoint_stability": 0.82
+    }
+  }
+}

@@ -67,6 +67,16 @@
       "min_interval_seconds": 1.2
     },
     {
+      "id": "newsnook-api",
+      "publisher": "NewsNook API",
+      "kind": "news_transport_api",
+      "health_url": "https://news.aizeek.com/api/feed/eastmoney-kx",
+      "expect": "text",
+      "authority_score": 0.50,
+      "endpoint_stability": 0.65,
+      "min_interval_seconds": 0.5
+    },
+    {
       "id": "gdelt-doc",
       "publisher": "GDELT Project",
       "kind": "media_discovery_index",

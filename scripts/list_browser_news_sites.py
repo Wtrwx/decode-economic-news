@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""List corpus-backed news sites and build browser discovery queries."""
+"""List corpus-backed sites and build targeted browser fallback queries."""
 
 from __future__ import annotations
 
@@ -84,6 +84,7 @@ def build_plan(sites: list[dict[str, Any]], topic: str) -> dict[str, Any]:
             "negative_or_restricted_results_are_valid_only_when_recorded": True,
         },
         "warnings": [
+            "Use this plan only for a documented NewsNook/API gap or an explicit user browser request.",
             "Publisher inclusion is inferred from explicit citations in the local transcript corpus, not browsing history.",
             "Do not bypass login, subscription, CAPTCHA or other access controls.",
         ],
